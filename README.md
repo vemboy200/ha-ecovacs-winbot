@@ -14,8 +14,9 @@ The ECOVACS HOME app only talks to the Winbot over Bluetooth, and iOS suspends t
 | Model | Status |
 |---|---|
 | Winbot W2 Pro Omni (firmware 2.6.0) | Tested |
-| Other Winbots controlled by the ECOVACS HOME app over Bluetooth (W1, W2, W2 Omni, ...) | Untested. They may use the same protocol; please open an issue either way |
-| Winbots controlled over Wi-Fi or the cloud | Not supported |
+| Other Winbots the ECOVACS HOME app reaches over Bluetooth (W1, W2, W2 Omni, W3, ...) | Untested. They may use the same protocol; please open an issue either way |
+
+This integration only talks to the robot over Bluetooth. Some models can also connect to Wi-Fi and the Ecovacs cloud (Ecovacs lists Bluetooth or Wi-Fi control for the W3 Omni); those features aren't used. For a Winbot on Wi-Fi, Home Assistant's built-in [Ecovacs integration](https://www.home-assistant.io/integrations/ecovacs/) may work over the cloud, but that hasn't been checked.
 
 The robot advertises as `WINBOT_<id>_<nnnn>`. The Omni station (`WINBASE_...`) is not used.
 
