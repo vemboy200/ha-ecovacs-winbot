@@ -1,34 +1,192 @@
 # Ecovacs Winbot for Home Assistant
 
-A Home Assistant custom integration for the Ecovacs Winbot window cleaning robot, talking to it locally over Bluetooth (directly or through an ESPHome Bluetooth proxy). No Ecovacs account or cloud needed.
+A Home Assistant custom integration for the Ecovacs Winbot window cleaning robot. It talks to the robot locally over Bluetooth, either from the Home Assistant machine's own Bluetooth adapter or through an [ESPHome Bluetooth proxy](https://esphome.io/components/bluetooth_proxy.html). No Ecovacs account, cloud or app is needed.
 
 > [!WARNING]
-> Work in progress. The integration itself isn't written yet; this repo currently holds the reverse-engineered protocol and the research tools.
+> Early version (0.1.0). Status, push events and the "cleaning finished" event work on real hardware; the control commands were captured from the ECOVACS HOME app and are still being tested from Home Assistant. Expect changes.
 
 ## Why
 
 The ECOVACS HOME app only talks to the Winbot over Bluetooth, and iOS suspends that connection when the app is in the background, so you never get a "cleaning finished" notification. The robot announces that moment over Bluetooth itself, so Home Assistant can listen for it and notify you instead.
 
-## Status
+## Supported devices
 
-- [x] Protocol reverse engineered: see [docs/protocol.md](docs/protocol.md)
-- [x] Status polling (`getInfo`) and push events (`onCleanInfo`, `onBatteryInfo`, ...) verified on real hardware
-- [ ] Home Assistant integration
-- [ ] Control commands (start, stop, mode)
+| Model | Status |
+|---|---|
+| Winbot W2 Pro Omni (firmware 2.6.0) | Tested |
+| Other Winbots controlled by the ECOVACS HOME app over Bluetooth (W1, W2, W2 Omni, ...) | Untested. They may use the same protocol; please open an issue either way |
+| Winbots controlled over Wi-Fi or the cloud | Not supported |
 
-Tested on: Winbot W2 Pro Omni (firmware 2.6.0). Other Winbot models that use the ECOVACS HOME app over Bluetooth may use the same protocol, but that's untested.
+The robot advertises as `WINBOT_<id>_<nnnn>`. The Omni station (`WINBASE_...`) is not used.
 
-## Security note
+## Requirements
 
-The robot doesn't use Bluetooth pairing or any login: anything within Bluetooth range can read its status, and probably control it. Nothing an integration can change.
+- Home Assistant with the [Bluetooth integration](https://www.home-assistant.io/integrations/bluetooth/) working, through a local adapter or an ESPHome Bluetooth proxy that supports active connections.
+- The robot within Bluetooth range of that adapter or proxy. A signal around -80 dBm or better is comfortable; near -90 dBm connections time out.
 
-## Research tools
+## Installation
 
-`tools/` has the Python ([bleak](https://github.com/hbldh/bleak)) scripts used to work out the protocol: a GATT dump, an advertisement watcher, a PacketLogger (`.pklg`) parser, and query-only status scripts. None of them send commands that make the robot move.
+### HACS (custom repository)
+
+1. In HACS, open the menu → **Custom repositories**.
+2. Add `https://github.com/vemboy200/ha-ecovacs-winbot` with type **Integration**.
+3. Search for **Ecovacs Winbot**, download it, and restart Home Assistant.
+
+### Manual
+
+1. Copy `custom_components/ecovacs_winbot` into your Home Assistant `config/custom_components/` folder.
+2. Restart Home Assistant.
+
+## Configuration
+
+1. Turn the Winbot on and close the ECOVACS HOME app (the robot only accepts one connection).
+2. Home Assistant should discover it: go to **Settings → Devices & services** and click **Configure** on the discovered **Winbot**. Or click **Add integration**, search for **Ecovacs Winbot**, and pick the robot from the list.
+
+### Installation parameters
+
+| Parameter | Description |
+|---|---|
+| Robot | The Winbot to add, chosen from the robots Home Assistant can currently hear over Bluetooth. Only shown when adding it manually; discovery fills it in. |
+
+There are no options to configure afterwards.
+
+## Entities
+
+| Entity | Type | Description |
+|---|---|---|
+| Winbot (vacuum) | Vacuum | Start (resumes if paused), pause, stop, return, spot clean. **Fan speed** is the cleaning mode: Deep, Edge, Spot, 5 minutes, 10 minutes. Picking a mode sets what Start uses, or switches immediately mid-clean |
+| Status | Sensor | Off, Idle, Cleaning, Paused, Returning, Remote control. "Off" means the robot isn't advertising (switched off or out of range) |
+| Battery | Sensor | Battery level. The robot reports 5 steps, so this moves in 20% steps |
+| Cleaning mode | Sensor | Mode the robot reports: Deep, Auto, Edge, Spot, Return, Remote control |
+| Cleaning | Event | Fires **Finished** when a clean completes on its own, **Interrupted** when the robot goes off mid-clean, **Error** when it reports an error (it stops when that happens; the codes are in the event's `error_codes` attribute) |
+| Charging | Binary sensor | Whether the battery is charging |
+| Attached to glass | Binary sensor | Whether suction is on |
+| Out of water | Binary sensor | On when the robot reports an empty tank. Unknown until the robot first reports it during a clean |
+| Spray | Button | Spray once |
+| Automatic spraying | Switch | Let the robot spray on its own while cleaning |
+| Let the app connect | Switch | While on, Home Assistant stays off the robot so the ECOVACS HOME app can connect (see below) |
+| Error code | Sensor (diagnostic) | Raw error codes; `0` means no error |
+| Signal strength | Sensor (diagnostic) | Bluetooth signal of the robot's advertisements, as heard by the best adapter or proxy |
+
+While the robot is off, everything except Status, Cleaning, Let the app connect and Signal strength shows as unavailable.
+
+## How data is updated
+
+The robot accepts only one Bluetooth connection at a time, so Home Assistant tries not to hog it:
+
+- **On or off** comes from the robot's Bluetooth advertisements. No connection is needed for that.
+- **When the robot turns on**, Home Assistant connects, reads the full status (`getInfo`), and lets go again after 15 seconds if the robot is idle.
+- **While idle and on**, it checks in the same way every 2 minutes.
+- **While cleaning**, it stays connected. The robot pushes every change (started, mode changed, battery, out of water, finished) the moment it happens, and Home Assistant asks for the full status every 60 seconds as a backup.
+- **Every new connection** starts by reading the full status, including when you press a control while disconnected.
+- **When the clean ends**, it lets go of the connection 15 seconds later so the app can connect again.
+
+### Let the app connect
+
+Turning this switch on makes Home Assistant disconnect and stop connecting, so the ECOVACS HOME app can use the robot. Status (on/off) and signal strength keep updating, because they only need advertisements. The other sensors keep their last values, the controls are unavailable, and no Finished event fires while it's on. Turn it off and Home Assistant reconnects and reads the full status. It resets to off when Home Assistant restarts.
+
+## Use cases
+
+- Get a phone notification when the robot finishes a window, instead of watching it.
+- Get notified when it runs out of water or stops with an error, so you can come back and fix it before it sits stuck on the glass.
+- Start a clean from a dashboard or a voice assistant, and pick a mode.
+- Track the battery so it's charged before the next window.
+
+## Examples
+
+Notify when a clean finishes, runs out of water, or stops with an error (replace the entity IDs and notify service with yours):
+
+```yaml
+automation:
+  - alias: "Winbot finished or stopped"
+    triggers:
+      - trigger: state
+        entity_id: event.winbot_0bc4_cleaning
+    conditions:
+      - condition: template
+        value_template: "{{ trigger.to_state.attributes.event_type in ['finished', 'error', 'interrupted'] }}"
+    actions:
+      - action: notify.mobile_app_my_phone
+        data:
+          title: "Winbot"
+          message: >
+            {% set t = trigger.to_state.attributes.event_type %}
+            {% if t == 'finished' %}Done cleaning the window.
+            {% elif t == 'error' %}Stopped with error {{ trigger.to_state.attributes.error_codes }}.
+            {% else %}Turned off in the middle of a clean.{% endif %}
+
+  - alias: "Winbot out of water"
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.winbot_0bc4_out_of_water
+        to: "on"
+    actions:
+      - action: notify.mobile_app_my_phone
+        data:
+          title: "Winbot"
+          message: "Out of water. Refill the tank."
+```
+
+A script that starts a 10-minute clean:
+
+```yaml
+script:
+  winbot_quick_clean:
+    alias: "Winbot quick clean"
+    sequence:
+      - action: vacuum.set_fan_speed
+        target:
+          entity_id: vacuum.winbot_0bc4
+        data:
+          fan_speed: "10 minutes"
+      - action: vacuum.start
+        target:
+          entity_id: vacuum.winbot_0bc4
+```
+
+## Known limitations
+
+- **One connection at a time.** While Home Assistant is connected (during a clean, and briefly when checking in), the ECOVACS HOME app can't connect. Use **Let the app connect** when you need the app.
+- **Short Bluetooth range.** Ecovacs quotes about 5 m for the app. Through a proxy, expect connection timeouts if the signal is around -90 dBm; move the robot or the proxy closer.
+- **Finishing is only seen while connected.** If the robot finishes while Home Assistant can't reach it, the Finished event fires on the next status check only if Home Assistant knew a clean was running.
+- **Battery is 5 steps**, not a real percentage.
+- **Error codes aren't decoded yet.** The robot reports numeric codes; they're shown as-is and logged.
+- **The 5-minute mode** sends a duration of 5, following the captured 10-minute mode. It hasn't been confirmed against the app yet.
+- **Not available yet:** remote-control driving, voice volume and language, the Omni station.
+- **No authentication on the robot.** Anything within Bluetooth range can read its status and probably control it. Nothing an integration can change.
+
+## Troubleshooting
+
+**The robot isn't discovered / "No Winbot found".** Turn it on, close the ECOVACS HOME app, and make sure an adapter or proxy is in range. Check **Settings → Devices & services → Bluetooth → Advertisement monitor** for a `WINBOT_` device or the robot's address.
+
+**Status shows Off while the robot is on.** Home Assistant isn't hearing its advertisements: it's out of range of every adapter and proxy, or the app is connected to it. Check the **Signal strength** history for how close to the limit it was.
+
+**Entities are unavailable but Status isn't Off.** Home Assistant hears the robot but hasn't managed to read its status. Look for connection timeouts in the log (below); they usually mean weak signal.
+
+**The ECOVACS HOME app can't connect.** Home Assistant is probably connected (during a clean, or checking in). Turn on **Let the app connect**, or wait for the clean to end.
+
+**Debug logs.** Add this to `configuration.yaml`, restart, and include the log when you open an issue. New error codes and unknown messages from the robot are logged as warnings even without debug logging.
+
+```yaml
+logger:
+  logs:
+    custom_components.ecovacs_winbot: debug
+```
+
+## Removal
+
+1. Go to **Settings → Devices & services → Ecovacs Winbot**, open the menu (⋮) on the robot's entry and choose **Delete**.
+2. If you installed it with HACS, remove **Ecovacs Winbot** in HACS and restart Home Assistant. If you installed it manually, delete `config/custom_components/ecovacs_winbot` and restart.
+
+The robot keeps working with the ECOVACS HOME app as before.
+
+## How it works
+
+The Winbot speaks small JSON messages over a Bluetooth serial-style channel. The protocol was worked out from Bluetooth logs of the ECOVACS HOME app and is documented in [docs/protocol.md](docs/protocol.md). `tools/` has the Python ([bleak](https://github.com/hbldh/bleak)) scripts used for that: a GATT dump, an advertisement watcher, a PacketLogger (`.pklg`) parser, query-only status scripts, and `winbot_send.py`, which sends one of the captured control commands.
 
 ## Disclaimer
 
-Not affiliated with or endorsed by Ecovacs. Built with the help of AI ([Claude Code](https://claude.com/claude-code)) and tested on my own robot.
+Not affiliated with or endorsed by Ecovacs. The Ecovacs name and logo are trademarks of Ecovacs Robotics. Built with the help of AI ([Claude Code](https://claude.com/claude-code)) and tested on my own robot.
 
 ## License
 

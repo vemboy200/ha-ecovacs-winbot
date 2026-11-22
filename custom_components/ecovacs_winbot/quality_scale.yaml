@@ -1,0 +1,119 @@
+rules:
+  # Bronze
+  action-setup:
+    status: exempt
+    comment: The integration does not register any custom actions.
+  appropriate-polling:
+    status: done
+    comment: >
+      Push first. getInfo is only polled every 2 minutes while the robot is on
+      and idle, and every 60 seconds while cleaning as a backup for missed pushes.
+  brands:
+    status: done
+    comment: Ecovacs brand images from home-assistant/brands are shipped in the integration's brand/ folder.
+  common-modules: done
+  config-flow-test-coverage:
+    status: todo
+    comment: No tests yet.
+  config-flow: done
+  dependency-transparency:
+    status: todo
+    comment: >
+      The protocol code lives in winbot/ inside the integration (no Home Assistant
+      imports) and still needs to be published as its own PyPI library.
+  docs-actions:
+    status: exempt
+    comment: The integration does not register any custom actions.
+  docs-conditions:
+    status: exempt
+    comment: The integration does not provide any custom conditions.
+  docs-high-level-description: done
+  docs-installation-instructions: done
+  docs-removal-instructions: done
+  docs-triggers:
+    status: exempt
+    comment: The integration does not provide any custom triggers (the cleaning event is an event entity).
+  entity-event-setup: done
+  entity-unique-id: done
+  has-entity-name: done
+  runtime-data: done
+  test-before-configure:
+    status: todo
+    comment: >
+      The config flow relies on the robot being heard over Bluetooth and doesn't
+      connect to it before creating the entry.
+  test-before-setup:
+    status: exempt
+    comment: >
+      The robot switches itself off after a few minutes idle, so it's usually
+      unreachable at startup. Setup succeeds and the robot shows as Off until it
+      advertises again, instead of retrying setup forever.
+  unique-config-entry: done
+
+  # Silver
+  action-exceptions: done
+  config-entry-unloading: done
+  docs-configuration-parameters:
+    status: exempt
+    comment: The integration has no options flow.
+  docs-installation-parameters: done
+  entity-unavailable: done
+  integration-owner: done
+  log-when-unavailable:
+    status: todo
+    comment: Going off and coming back are only logged at debug level.
+  parallel-updates: done
+  reauthentication-flow:
+    status: exempt
+    comment: The robot has no authentication.
+  test-coverage:
+    status: todo
+    comment: No tests yet.
+
+  # Gold
+  devices: done
+  diagnostics:
+    status: todo
+    comment: No diagnostics platform yet.
+  discovery-update-info:
+    status: exempt
+    comment: The robot is identified by its Bluetooth address, which doesn't change.
+  discovery: done
+  docs-data-update: done
+  docs-examples: done
+  docs-known-limitations: done
+  docs-supported-devices: done
+  docs-supported-functions: done
+  docs-troubleshooting: done
+  docs-use-cases: done
+  dynamic-devices:
+    status: exempt
+    comment: Each config entry is one robot.
+  entity-category: done
+  entity-device-class: done
+  entity-disabled-by-default:
+    status: done
+    comment: >
+      Signal strength is deliberately enabled: the robot moves between windows and
+      Bluetooth range is the most common reason it can't be reached.
+  entity-translations: done
+  exception-translations: done
+  icon-translations: done
+  reconfiguration-flow:
+    status: exempt
+    comment: There is nothing to reconfigure; the robot is identified by its Bluetooth address.
+  repair-issues:
+    status: exempt
+    comment: There are no problems the user needs to fix through a repair issue.
+  stale-devices:
+    status: exempt
+    comment: Each config entry is one robot; removing the robot means removing the entry.
+
+  # Platinum
+  async-dependency: done
+  inject-websession:
+    status: exempt
+    comment: The integration doesn't use HTTP.
+  strict-typing:
+    status: todo
+    comment: Not checked with mypy yet.
