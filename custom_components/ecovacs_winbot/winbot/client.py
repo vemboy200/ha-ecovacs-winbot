@@ -17,7 +17,7 @@ from bleak_retry_connector import (
 )
 
 from .models import CleanMode, WinbotStatus, apply_info, apply_section
-from .protocol import Frame, FrameAssembler, FrameKind, encode_request, new_msg_id
+from .protocol import Frame, FrameAssembler, FrameKind, encode_request, new_msg_id, redact
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -119,7 +119,10 @@ class WinbotClient:
     def _handle_notify(self, _sender: Any, chunk: bytearray) -> None:
         self.last_seen = time.monotonic()
         for frame in self._assembler.feed(bytes(chunk)):
-            _LOGGER.debug("%s: <- %s %s %s", self._ble_device.address, frame.kind, frame.command, frame.body)
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(
+                    "%s: <- %s %s %s", self._ble_device.address, frame.kind, frame.command, redact(frame.body)
+                )
             if frame.kind is FrameKind.REPLY and frame.msg_id in self._pending:
                 fut = self._pending.pop(frame.msg_id)
                 if not fut.done():

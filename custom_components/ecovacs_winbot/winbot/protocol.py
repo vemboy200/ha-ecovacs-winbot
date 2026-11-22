@@ -17,6 +17,11 @@ MAGIC_REQUEST = b"`FP"
 PROTOCOL_ID = b"12124"
 TERMINATOR = 0x0A
 
+# getRobotInfo fields that identify this particular robot. Kept out of logs,
+# which users are asked to post in public issues.
+IDENTIFYING_KEYS = frozenset({"SN", "DID", "MAC"})
+REDACTED = "**REDACTED**"
+
 
 class FrameKind(StrEnum):
     """What kind of frame this is."""
@@ -119,3 +124,12 @@ class FrameAssembler:
         if len(self._buf) > 16384:
             self._buf.clear()
         return frames
+
+
+def redact(value: Any) -> Any:
+    """Return a copy of a decoded body with the robot's identifiers replaced, for logging."""
+    if isinstance(value, dict):
+        return {k: REDACTED if k in IDENTIFYING_KEYS else redact(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [redact(v) for v in value]
+    return value

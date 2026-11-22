@@ -31,7 +31,7 @@ from .const import (
     FALLBACK_AVAILABILITY_SECONDS,
     IDLE_CHECK_INTERVAL,
 )
-from .winbot import CleanMode, Frame, WinbotClient, WinbotError, WinbotStatus
+from .winbot import CleanMode, Frame, WinbotClient, WinbotError, WinbotStatus, redact
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -194,7 +194,7 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
             _LOGGER.warning(
                 "Winbot sent a message this integration doesn't know yet, please report it: %s %s",
                 frame.command,
-                frame.body,
+                redact(frame.body),
             )
         self._handle_new_status(status)
 

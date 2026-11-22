@@ -7,7 +7,7 @@ from .client import (
     WinbotError,
 )
 from .models import Activity, CleanMode, WinbotStatus
-from .protocol import Frame, FrameAssembler, FrameKind, crc8, decode_frame, encode_request
+from .protocol import Frame, FrameAssembler, FrameKind, crc8, decode_frame, encode_request, redact
 
 __all__ = [
     "Activity",
@@ -23,4 +23,5 @@ __all__ = [
     "crc8",
     "decode_frame",
     "encode_request",
+    "redact",
 ]
