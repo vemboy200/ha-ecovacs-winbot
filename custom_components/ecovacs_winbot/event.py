@@ -1,4 +1,4 @@
-"""Event entity for Ecovacs Winbot (clean finished / interrupted)."""
+"""Event entity for Ecovacs Winbot (done cleaning / done returning / interrupted / error)."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from homeassistant.components.event import EventEntity, EventEntityDescription
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .const import EVENT_ERROR, EVENT_FINISHED, EVENT_INTERRUPTED
+from .const import EVENT_ERROR, EVENT_FINISHED, EVENT_INTERRUPTED, EVENT_RETURNED
 from .coordinator import WinbotConfigEntry, WinbotCoordinator
 from .entity import WinbotEntity
 
@@ -23,7 +23,7 @@ async def async_setup_entry(
 
 
 class WinbotCleaningEvent(WinbotEntity, EventEntity):
-    """Fires when a clean finishes on its own, is interrupted (robot went off mid-clean), or the robot reports an error (it stops when that happens)."""
+    """Fires when a clean finishes on its own, a return finishes, a clean is interrupted (robot went off mid-clean), or the robot reports an error (it stops when that happens)."""
 
     available_when_off = True
 
@@ -34,7 +34,7 @@ class WinbotCleaningEvent(WinbotEntity, EventEntity):
             EventEntityDescription(
                 key="cleaning",
                 translation_key="cleaning",
-                event_types=[EVENT_FINISHED, EVENT_INTERRUPTED, EVENT_ERROR],
+                event_types=[EVENT_FINISHED, EVENT_RETURNED, EVENT_INTERRUPTED, EVENT_ERROR],
             ),
         )
 

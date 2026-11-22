@@ -24,6 +24,7 @@
         "default": "mdi:broom",
         "state": {
           "finished": "mdi:check-circle",
+          "returned": "mdi:keyboard-return",
           "interrupted": "mdi:power-plug-off",
           "error": "mdi:alert-circle"
         }

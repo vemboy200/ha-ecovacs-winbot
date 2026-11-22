@@ -41,7 +41,8 @@
         "state_attributes": {
           "event_type": {
             "state": {
-              "finished": "Finished",
+              "finished": "Done cleaning",
+              "returned": "Done returning",
               "interrupted": "Interrupted",
               "error": "Error"
             }

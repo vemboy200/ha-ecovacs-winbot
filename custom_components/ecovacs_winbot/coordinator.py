@@ -27,10 +27,11 @@ from .const import (
     EVENT_ERROR,
     EVENT_FINISHED,
     EVENT_INTERRUPTED,
+    EVENT_RETURNED,
     FALLBACK_AVAILABILITY_SECONDS,
     IDLE_CHECK_INTERVAL,
 )
-from .winbot import Frame, WinbotClient, WinbotError, WinbotStatus
+from .winbot import CleanMode, Frame, WinbotClient, WinbotError, WinbotStatus
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -107,7 +108,7 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
         if self.client:
             await self.client.disconnect()
 
-    # Events (finished / interrupted)
+    # Events (finished / returned / interrupted / error)
 
     @callback
     def async_add_event_listener(
@@ -231,7 +232,9 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
                 status.state,
             )
         if status.finished and not old.finished and old.state is not None:
-            self._fire(EVENT_FINISHED)
+            # A return also ends with workComplete. Its idle push already shows
+            # the previous cleaning mode, so tell them apart by the old one.
+            self._fire(EVENT_RETURNED if old.router == CleanMode.RETURN else EVENT_FINISHED)
         self.async_set_updated_data(status)
         self._update_device_info(status)
         if status.is_active:

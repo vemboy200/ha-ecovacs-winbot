@@ -12,5 +12,6 @@ ACTIVE_POLL_INTERVAL = timedelta(seconds=60)
 FALLBACK_AVAILABILITY_SECONDS = 120
 
 EVENT_FINISHED = "finished"
+EVENT_RETURNED = "returned"
 EVENT_INTERRUPTED = "interrupted"
 EVENT_ERROR = "error"

@@ -58,7 +58,7 @@ There are no options to configure afterwards.
 | Status | Sensor | Off, Idle, Cleaning, Paused, Returning, Remote control. "Off" means the robot isn't advertising (switched off or out of range) |
 | Battery | Sensor | Battery level. The robot reports 5 steps, so this moves in 20% steps |
 | Cleaning mode | Sensor | Mode the robot reports: Deep, Auto, Edge, Spot, Return, Remote control |
-| Cleaning | Event | Fires **Finished** when a clean completes on its own, **Interrupted** when the robot goes off mid-clean, **Error** when it reports an error (it stops when that happens; the codes are in the event's `error_codes` attribute) |
+| Cleaning | Event | Fires **Done cleaning** (`finished`) when a clean completes on its own, **Done returning** (`returned`) when a return completes, **Interrupted** when the robot goes off mid-clean, **Error** when it reports an error (it stops when that happens; the codes are in the event's `error_codes` attribute) |
 | Charging | Binary sensor | Whether the battery is charging |
 | Attached to glass | Binary sensor | Whether suction is on |
 | Out of water | Binary sensor | On when the robot reports an empty tank. Unknown until the robot first reports it during a clean |
@@ -82,7 +82,7 @@ Because the robot accepts only one Bluetooth connection at a time, the ECOVACS H
 
 ### Let the app connect
 
-Turning this switch on makes Home Assistant disconnect and stop connecting, so the ECOVACS HOME app can use the robot. Status (on/off) and signal strength keep updating, because they only need advertisements. The other sensors keep their last values, the controls are unavailable, and no Finished event fires while it's on. Turn it off and Home Assistant reconnects and reads the full status. It resets to off when Home Assistant restarts.
+Turning this switch on makes Home Assistant disconnect and stop connecting, so the ECOVACS HOME app can use the robot. Status (on/off) and signal strength keep updating, because they only need advertisements. The other sensors keep their last values, the controls are unavailable, and no Cleaning events fire while it's on. Turn it off and Home Assistant reconnects and reads the full status. It resets to off when Home Assistant restarts.
 
 ## Use cases
 
@@ -93,7 +93,7 @@ Turning this switch on makes Home Assistant disconnect and stop connecting, so t
 
 ## Examples
 
-Notify when a clean finishes, runs out of water, or stops with an error (replace the entity IDs and notify service with yours):
+Notify when a clean finishes, runs out of water, or stops with an error (replace the entity IDs and notify service with yours). Done returning (`returned`) is left out on purpose; add it to the list if you want that too:
 
 ```yaml
 automation:
@@ -147,7 +147,7 @@ script:
 
 - **One connection at a time.** Home Assistant stays connected while the robot is on, so the ECOVACS HOME app can't connect. Turn on **Let the app connect** when you need the app.
 - **Short Bluetooth range.** Ecovacs quotes about 5 m for the app. Through a proxy, expect connection timeouts if the signal is around -90 dBm; move the robot or the proxy closer.
-- **Events are only seen while connected.** If the connection drops (weak signal) and the robot finishes or errors before Home Assistant gets back in, the Finished event fires on the next status check only if Home Assistant knew a clean was running, and an error that already cleared is missed.
+- **Events are only seen while connected.** If the connection drops (weak signal) and the robot finishes or errors before Home Assistant gets back in, the Done cleaning event fires on the next status check only if Home Assistant knew a clean was running, and an error that already cleared is missed.
 - **Battery is 5 steps**, not a real percentage.
 - **Error codes aren't decoded yet.** The robot reports numeric codes; they're shown as-is and logged.
 - **The 5-minute mode** sends a duration of 5, following the captured 10-minute mode. It hasn't been confirmed against the app yet.
