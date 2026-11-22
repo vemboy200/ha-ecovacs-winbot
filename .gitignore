@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+# Raw captures include the robot serial number and device id
+docs/captures/
+*.pklg
