@@ -13,15 +13,14 @@ rules:
     status: done
     comment: Ecovacs brand images from home-assistant/brands are shipped in the integration's brand/ folder.
   common-modules: done
-  config-flow-test-coverage:
-    status: todo
-    comment: No tests yet.
+  config-flow-test-coverage: done
   config-flow: done
   dependency-transparency:
-    status: todo
+    status: exempt
     comment: >
-      The protocol code lives in winbot/ inside the integration (no Home Assistant
-      imports) and still needs to be published as its own PyPI library.
+      There are no requirements. The protocol code is bundled in winbot/ (no Home
+      Assistant imports, MIT, in this repository). It has to become its own PyPI
+      library before a core submission, where bundling isn't allowed.
   docs-actions:
     status: exempt
     comment: The integration does not register any custom actions.
@@ -38,11 +37,7 @@ rules:
   entity-unique-id: done
   has-entity-name: done
   runtime-data: done
-  test-before-configure:
-    status: todo
-    comment: >
-      The config flow relies on the robot being heard over Bluetooth and doesn't
-      connect to it before creating the entry.
+  test-before-configure: done
   test-before-setup:
     status: exempt
     comment: >
@@ -69,7 +64,7 @@ rules:
     comment: The robot has no authentication.
   test-coverage:
     status: todo
-    comment: No tests yet.
+    comment: Only the config flow is tested so far.
 
   # Gold
   devices: done

@@ -3,7 +3,7 @@
 A Home Assistant custom integration for the Ecovacs Winbot window cleaning robot. It talks to the robot locally over Bluetooth, either from the Home Assistant machine's own Bluetooth adapter or through an [ESPHome Bluetooth proxy](https://esphome.io/components/bluetooth_proxy.html). No Ecovacs account, cloud or app is needed.
 
 > [!WARNING]
-> Early version (0.1.0). Status, push events, the cleaning events and the controls (start, pause, stop, return, every cleaning mode, volume) have been tested from Home Assistant on real hardware. Expect changes.
+> Early version (0.1.0, Bronze on the [quality scale](https://www.home-assistant.io/docs/quality_scale/)). Status, push events, the cleaning events and the controls (start, pause, stop, return, every cleaning mode, volume) have been tested from Home Assistant on real hardware. Expect changes.
 
 ## Why
 
@@ -27,11 +27,11 @@ The robot advertises as `WINBOT_<id>_<nnnn>`. The Omni station (`WINBASE_...`) i
 
 ## Installation
 
-### HACS (custom repository)
+### Through the Marketplace (or HACS)
 
-1. In HACS, open the menu → **Custom repositories**.
-2. Add `https://github.com/vemboy200/ha-ecovacs-winbot` with type **Integration**.
-3. Search for **Ecovacs Winbot**, download it, and restart Home Assistant.
+1. In Home Assistant, go to **Settings** > **Marketplace** and select **Add from link**. On Home Assistant 2026.10 or older, add it as a custom repository (type **Integration**) in HACS instead.
+2. Enter `vemboy200/ha-ecovacs-winbot` and add it.
+3. Install **Ecovacs Winbot** and restart Home Assistant.
 
 ### Manual
 
@@ -42,6 +42,7 @@ The robot advertises as `WINBOT_<id>_<nnnn>`. The Omni station (`WINBASE_...`) i
 
 1. Turn the Winbot on and close the ECOVACS HOME app (the robot only accepts one connection).
 2. Home Assistant should discover it: go to **Settings → Devices & services** and click **Configure** on the discovered **Winbot**. Or click **Add integration**, search for **Ecovacs Winbot**, and pick the robot from the list.
+3. Home Assistant connects to the robot and reads its status before adding it. If that fails, you get "Couldn't connect to the Winbot": check that it's on, that the app is closed, and that it's in range, then try again.
 
 ### Installation parameters
 
@@ -175,7 +176,7 @@ logger:
 ## Removal
 
 1. Go to **Settings → Devices & services → Ecovacs Winbot**, open the menu (⋮) on the robot's entry and choose **Delete**.
-2. If you installed it with HACS, remove **Ecovacs Winbot** in HACS and restart Home Assistant. If you installed it manually, delete `config/custom_components/ecovacs_winbot` and restart.
+2. If you installed it through the Marketplace (or HACS), uninstall **Ecovacs Winbot** there and restart Home Assistant. If you installed it manually, delete `config/custom_components/ecovacs_winbot` and restart.
 
 The robot keeps working with the ECOVACS HOME app as before.
 
