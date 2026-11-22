@@ -177,6 +177,8 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
     def _on_unexpected_disconnect(self) -> None:
         _LOGGER.debug("%s: connection dropped", self.address)
         self._stop_active_poll()
+        if self.hass.is_stopping:
+            return  # HA shutting down closed it; the robot didn't go anywhere
         if not bluetooth.async_address_present(self.hass, self.address, connectable=True):
             # The unavailable callback was skipped while connected, so check here.
             self._mark_off()

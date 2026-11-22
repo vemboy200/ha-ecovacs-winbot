@@ -112,6 +112,11 @@ def apply_section(status: WinbotStatus, name: str, data: dict[str, Any]) -> Winb
             "duration": clean_state.get("duration"),
             "direction": clean_state.get("direction"),
         }
+        if data.get("state") == "clean" and status.state not in ("clean", None):
+            # A new clean started. The robot only reports water when the tank
+            # runs dry (it said nothing after a refill, a start or a spray), so
+            # assume water until it says otherwise; last time it did ~20 s in.
+            changes["out_of_water"] = False
     elif key == "Error":
         changes = {"error_codes": tuple(data.get("code") or ())}
     elif key == "SprayInfo":
