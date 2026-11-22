@@ -1,0 +1,71 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "attached": {
+        "default": "mdi:window-closed-variant",
+        "state": {
+          "off": "mdi:window-open-variant"
+        }
+      },
+      "out_of_water": {
+        "default": "mdi:water-check",
+        "state": {
+          "on": "mdi:water-off"
+        }
+      }
+    },
+    "button": {
+      "spray": {
+        "default": "mdi:spray"
+      }
+    },
+    "event": {
+      "cleaning": {
+        "default": "mdi:broom",
+        "state": {
+          "finished": "mdi:check-circle",
+          "interrupted": "mdi:power-plug-off",
+          "error": "mdi:alert-circle"
+        }
+      }
+    },
+    "sensor": {
+      "status": {
+        "default": "mdi:robot-vacuum",
+        "state": {
+          "off": "mdi:power-off",
+          "cleaning": "mdi:broom",
+          "paused": "mdi:pause-circle",
+          "returning": "mdi:keyboard-return",
+          "remote_control": "mdi:gamepad-variant"
+        }
+      },
+      "clean_mode": {
+        "default": "mdi:dots-grid",
+        "state": {
+          "border": "mdi:border-outside",
+          "spot": "mdi:target",
+          "return": "mdi:keyboard-return",
+          "control": "mdi:gamepad-variant"
+        }
+      },
+      "error": {
+        "default": "mdi:alert-circle-outline"
+      }
+    },
+    "switch": {
+      "auto_spray": {
+        "default": "mdi:spray",
+        "state": {
+          "off": "mdi:spray-bottle"
+        }
+      },
+      "app_mode": {
+        "default": "mdi:cellphone-off",
+        "state": {
+          "on": "mdi:cellphone-link"
+        }
+      }
+    }
+  }
+}

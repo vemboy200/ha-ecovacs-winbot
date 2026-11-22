@@ -34,16 +34,6 @@ BINARY_SENSORS: tuple[WinbotBinarySensorDescription, ...] = (
         value_fn=lambda s: s.charging,
     ),
     WinbotBinarySensorDescription(
-        key="plugged_in",
-        device_class=BinarySensorDeviceClass.PLUG,
-        value_fn=lambda s: s.powered,
-    ),
-    WinbotBinarySensorDescription(
-        key="battery_low",
-        device_class=BinarySensorDeviceClass.BATTERY,
-        value_fn=lambda s: s.battery_low,
-    ),
-    WinbotBinarySensorDescription(
         key="attached",
         translation_key="attached",
         value_fn=lambda s: s.attached,
