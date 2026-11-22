@@ -53,7 +53,6 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
         self.awake = bluetooth.async_address_present(hass, address, connectable=True)
         self.app_mode = False  # True = HA lets go so the app can connect
         self.client: WinbotClient | None = None
-        self._last_check = 0.0
         self._lock = asyncio.Lock()
         self._unsubs: list[CALLBACK_TYPE] = []
         self._disconnect_timer: CALLBACK_TYPE | None = None
@@ -85,7 +84,18 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
                 self.hass, self._async_on_unavailable, self.address, connectable=True
             )
         )
+        # HA only calls _async_on_advertisement when the advertisement content
+        # changes, and the robot's doesn't while it sits idle, so the idle
+        # check-in needs its own timer.
+        self._unsubs.append(async_track_time_interval(self.hass, self._async_idle_tick, IDLE_CHECK_INTERVAL))
         if self.awake:
+            self._schedule_check()
+
+    @callback
+    def _async_idle_tick(self, _now: object) -> None:
+        if self.awake and not self._connected:
+            if info := bluetooth.async_last_service_info(self.hass, self.address, connectable=True):
+                self.rssi = info.rssi
             self._schedule_check()
 
     async def async_shutdown(self) -> None:
@@ -132,8 +142,6 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
             self._schedule_check()
             return
         self._maybe_write_rssi()
-        if not self._connected and time.monotonic() - self._last_check > IDLE_CHECK_INTERVAL.total_seconds():
-            self._schedule_check()
 
     @callback
     def _maybe_write_rssi(self) -> None:
@@ -241,7 +249,6 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
         if self._lock.locked():
             return
         async with self._lock:
-            self._last_check = time.monotonic()
             try:
                 client = self._get_client()
                 status = await client.get_info()
@@ -329,7 +336,6 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
                 # current right away and pause/stop use the real cleaning mode.
                 self._handle_new_status(await client.get_info())
             await getattr(client, method)(*args, **kwargs)
-            self._last_check = time.monotonic()
         # The robot pushes onCleanInfo after clean commands; for others (or if
         # the push is late), fall back to the usual idle disconnect.
         self._handle_new_status(client.status)
