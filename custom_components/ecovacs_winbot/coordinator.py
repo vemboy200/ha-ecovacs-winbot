@@ -23,6 +23,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from .const import (
     ACTIVE_POLL_INTERVAL,
     DOMAIN,
+    EVENT_ERROR,
     EVENT_FINISHED,
     EVENT_INTERRUPTED,
     FALLBACK_AVAILABILITY_SECONDS,
@@ -36,6 +37,7 @@ _LOGGER = logging.getLogger(__name__)
 type WinbotConfigEntry = ConfigEntry[WinbotCoordinator]
 
 # Push messages seen so far (docs/protocol.md). Anything else gets logged as a warning.
+KNOWN_TRIGGERS = {"button", "app", "workComplete"}
 KNOWN_PUSHES = {"onBatteryInfo", "onCleanInfo", "onAdsorption", "onGlassType", "onSprayInfo"}
 
 
@@ -56,7 +58,7 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
         self._unsubs: list[CALLBACK_TYPE] = []
         self._disconnect_timer: CALLBACK_TYPE | None = None
         self._active_poll: CALLBACK_TYPE | None = None
-        self._event_listeners: list[Callable[[str], None]] = []
+        self._event_listeners: list[Callable[[str, dict[str, object] | None], None]] = []
         self.data = WinbotStatus()
         self.rssi: int | None = None
         self._rssi_written: tuple[int | None, float] = (None, 0.0)
@@ -99,16 +101,18 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
     # Events (finished / interrupted)
 
     @callback
-    def async_add_event_listener(self, listener: Callable[[str], None]) -> CALLBACK_TYPE:
+    def async_add_event_listener(
+        self, listener: Callable[[str, dict[str, object] | None], None]
+    ) -> CALLBACK_TYPE:
         """Listen for robot events. Returns an unsubscribe callback."""
         self._event_listeners.append(listener)
         return lambda: self._event_listeners.remove(listener)
 
     @callback
-    def _fire(self, event_type: str) -> None:
-        _LOGGER.debug("%s: event %s", self.address, event_type)
+    def _fire(self, event_type: str, attributes: dict[str, object] | None = None) -> None:
+        _LOGGER.debug("%s: event %s %s", self.address, event_type, attributes)
         for listener in list(self._event_listeners):
-            listener(event_type)
+            listener(event_type, attributes)
 
     # Bluetooth callbacks
 
@@ -199,6 +203,18 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
                 status.state,
                 status.trigger,
                 status.router,
+            )
+            if old.state is not None:  # not on the first status after setup, or every restart would fire it
+                self._fire(EVENT_ERROR, {"error_codes": list(status.error_codes)})
+        if (
+            status.trigger is not None
+            and status.trigger != old.trigger
+            and status.trigger not in KNOWN_TRIGGERS
+        ):
+            _LOGGER.warning(
+                "Winbot reported a trigger this integration doesn't know yet, please report it: %s (state %s)",
+                status.trigger,
+                status.state,
             )
         if status.finished and not old.finished and old.state is not None:
             self._fire(EVENT_FINISHED)

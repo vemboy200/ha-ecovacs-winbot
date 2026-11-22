@@ -48,7 +48,8 @@
           "event_type": {
             "state": {
               "finished": "Finished",
-              "interrupted": "Interrupted"
+              "interrupted": "Interrupted",
+              "error": "Error"
             }
           }
         }

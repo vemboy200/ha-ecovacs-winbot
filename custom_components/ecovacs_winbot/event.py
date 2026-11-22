@@ -6,7 +6,7 @@ from homeassistant.components.event import EventEntity, EventEntityDescription
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .const import EVENT_FINISHED, EVENT_INTERRUPTED
+from .const import EVENT_ERROR, EVENT_FINISHED, EVENT_INTERRUPTED
 from .coordinator import WinbotConfigEntry, WinbotCoordinator
 from .entity import WinbotEntity
 
@@ -23,7 +23,7 @@ async def async_setup_entry(
 
 
 class WinbotCleaningEvent(WinbotEntity, EventEntity):
-    """Fires when a clean finishes on its own, or is interrupted (robot went off mid-clean)."""
+    """Fires when a clean finishes on its own, is interrupted (robot went off mid-clean), or the robot reports an error (it stops when that happens)."""
 
     available_when_off = True
 
@@ -34,7 +34,7 @@ class WinbotCleaningEvent(WinbotEntity, EventEntity):
             EventEntityDescription(
                 key="cleaning",
                 translation_key="cleaning",
-                event_types=[EVENT_FINISHED, EVENT_INTERRUPTED],
+                event_types=[EVENT_FINISHED, EVENT_INTERRUPTED, EVENT_ERROR],
             ),
         )
 
@@ -44,6 +44,6 @@ class WinbotCleaningEvent(WinbotEntity, EventEntity):
         self.async_on_remove(self.coordinator.async_add_event_listener(self._handle_event))
 
     @callback
-    def _handle_event(self, event_type: str) -> None:
-        self._trigger_event(event_type)
+    def _handle_event(self, event_type: str, attributes: dict[str, object] | None = None) -> None:
+        self._trigger_event(event_type, attributes)
         self.async_write_ha_state()
