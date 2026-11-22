@@ -31,12 +31,6 @@
       }
     },
     "button": {
-      "start_border": {
-        "name": "Start edge clean"
-      },
-      "start_timed": {
-        "name": "Start 10-minute clean"
-      },
       "spray": {
         "name": "Spray"
       }
@@ -94,6 +88,9 @@
   "exceptions": {
     "command_failed": {
       "message": "The Winbot didn't accept the command: {error}"
+    },
+    "unknown_mode": {
+      "message": "Unknown cleaning mode \"{mode}\". Pick one of: {modes}."
     }
   }
 }

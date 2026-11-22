@@ -13,7 +13,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from .const import DOMAIN
 from .coordinator import WinbotConfigEntry
 from .entity import WinbotEntity
-from .winbot import CleanMode, WinbotError
+from .winbot import WinbotError
 
 PARALLEL_UPDATES = 1
 
@@ -27,15 +27,6 @@ class WinbotButtonDescription(ButtonEntityDescription):
 
 
 BUTTONS: tuple[WinbotButtonDescription, ...] = (
-    WinbotButtonDescription(
-        key="start_border", translation_key="start_border", method="start", kwargs={"mode": CleanMode.BORDER}
-    ),
-    WinbotButtonDescription(
-        key="start_timed",
-        translation_key="start_timed",
-        method="start",
-        kwargs={"mode": CleanMode.DEPTH, "duration": 10},
-    ),
     WinbotButtonDescription(key="spray", translation_key="spray", method="spray_once"),
 )
 

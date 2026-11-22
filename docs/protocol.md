@@ -94,7 +94,7 @@ The main command. Request data: `{"act": <act>, "content": {...}}`.
 |---|---|---|
 | `type` | `depth`, `border`, `spot`, `return` | Cleaning mode. `return` = go back (it ended with `workComplete` about a second later) |
 | `border` | `0`, `1` | Edge cleaning on/off (*reading*; the app toggled it alongside mode changes) |
-| `duration` | `0`, `10` | Timed clean in minutes: `10` = the app's 10-minute timed clean (user confirmed), `0` = until done. Echoed in `cleanState.duration` |
+| `duration` | `0`, `10` | Timed clean in minutes: `10` = the app's 10-minute timed clean (user confirmed), `0` = until done. The app also offers a 5-minute clean; `5` is assumed from the pattern, not captured. Echoed in `cleanState.duration` |
 | `windowType` | `inner` | Only `inner` seen; absent for `spot` and `return` |
 | `direction` | `normal`, `left`, `right` | Starting direction (*reading*) |
 
@@ -159,7 +159,7 @@ A `getInfo` poll every 10 s saw every change within one interval.
 ## Not yet known
 
 - Whether our own code can send the control commands (captured, not replayed yet).
-- What `wheelsStart` is, the max `setVoice` value, and which other durations the app offers.
+- What `wheelsStart` is, the max `setVoice` value, and confirming `duration: 5` for the 5-minute clean.
 - Other `state` / `trigger` values (error, fell off, low battery).
 - What `border` and `glass_type` values mean, and what `water` reads when the tank has water.
 - Whether the station (`WINBASE`) has anything useful.
