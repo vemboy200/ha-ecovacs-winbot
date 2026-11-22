@@ -61,7 +61,7 @@ There are no options to configure afterwards.
 | Cleaning | Event | Fires **Done cleaning** (`finished`) when a clean completes on its own, **Done returning** (`returned`) when a return completes, **Interrupted** when the robot goes off mid-clean, **Error** when it reports an error (it stops when that happens; the codes are in the event's `error_codes` attribute) |
 | Charging | Binary sensor | Whether the battery is charging |
 | Attached to glass | Binary sensor | Whether suction is on |
-| Out of water | Binary sensor | On when the robot reports an empty tank. Unknown until the robot first reports it during a clean |
+| Out of water | Binary sensor | On when the robot reports an empty tank. The robot only says so in a message during a clean (the full status doesn't include it), so the last value is kept, also across Home Assistant restarts, until the robot reports again. Unknown until the first report. It hasn't been seen yet whether the robot reports a refilled tank, so after refilling it may stay on until the next clean |
 | Spray | Button | Spray once |
 | Automatic spraying | Switch | Let the robot spray on its own while cleaning |
 | Voice volume | Number | Volume of the robot's voice prompts, 0-63 (the app was seen sending 7, 14 and 21). The robot beeps at the new volume when it changes |
