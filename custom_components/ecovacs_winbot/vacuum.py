@@ -46,8 +46,8 @@ class Mode:
     duration: int = 0
 
 
-# Values match what the app sent (docs/protocol.md). The 5-minute clean
-# follows the 10-minute one's pattern (duration in minutes); not captured yet.
+# Values match what the app sent (docs/protocol.md). duration is in minutes;
+# 5 and 10 were both confirmed on the robot.
 MODES: dict[str, Mode] = {
     "Deep": Mode(CleanMode.DEPTH, border=True),
     "Edge": Mode(CleanMode.BORDER, border=False),
