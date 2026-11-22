@@ -5,3 +5,5 @@ venv/
 # Raw captures include the robot serial number and device id
 docs/captures/
 *.pklg
+.coverage
+.pytest_cache/

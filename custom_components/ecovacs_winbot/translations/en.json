@@ -19,6 +19,10 @@
       "already_configured": "This Winbot is already set up.",
       "no_devices_found": "No Winbot found. Turn it on, close the ECOVACS HOME app, and make sure it's in range of a Bluetooth adapter or proxy.",
       "not_supported": "This device isn't a supported Winbot."
+    },
+    "error": {
+      "cannot_connect": "Couldn't connect to the Winbot. Make sure it's on, close the ECOVACS HOME app (the robot only accepts one connection), and try again.",
+      "unknown": "Unexpected error"
     }
   },
   "entity": {
