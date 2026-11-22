@@ -29,6 +29,11 @@
         }
       }
     },
+    "number": {
+      "volume": {
+        "default": "mdi:volume-high"
+      }
+    },
     "sensor": {
       "status": {
         "default": "mdi:robot-vacuum",

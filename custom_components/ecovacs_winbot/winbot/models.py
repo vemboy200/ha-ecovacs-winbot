@@ -44,6 +44,7 @@ class WinbotStatus:
     direction: str | None = None
     error_codes: tuple[int, ...] = ()
     auto_spray: bool | None = None
+    volume: int | None = None  # voice volume 0-63
     out_of_water: bool | None = None  # only known from onSprayInfo
     serial_number: str | None = None
     firmware: str | None = None  # SVER
@@ -118,6 +119,8 @@ def apply_section(status: WinbotStatus, name: str, data: dict[str, Any]) -> Winb
         if "water" in data:
             # water 0 = out of water (confirmed by the robot's voice prompt).
             changes["out_of_water"] = not _bool(data["water"])
+    elif key == "Voice":
+        changes = {"volume": data.get("value")}
     elif key == "RobotInfo":
         changes = {
             "serial_number": data.get("SN"),

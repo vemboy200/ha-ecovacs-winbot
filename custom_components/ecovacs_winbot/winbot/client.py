@@ -231,6 +231,11 @@ class WinbotClient:
         """Spray water once."""
         await self.request("sprayWater", {"direction": "auto"})
 
+    async def set_volume(self, value: int) -> None:
+        """Set the voice volume."""
+        reply = await self.request("setVoice", {"value": value})
+        self.status = apply_section(self.status, "setVoice", reply.data or {"value": value})
+
     async def set_auto_spray(self, enabled: bool) -> None:
         """Turn automatic spraying on or off."""
         reply = await self.request("setSprayInfo", {"auto": int(enabled)})

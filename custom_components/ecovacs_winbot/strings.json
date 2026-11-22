@@ -49,6 +49,11 @@
         }
       }
     },
+    "number": {
+      "volume": {
+        "name": "Voice volume"
+      }
+    },
     "sensor": {
       "status": {
         "name": "Status",

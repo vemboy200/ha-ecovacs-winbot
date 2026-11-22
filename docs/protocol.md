@@ -106,7 +106,7 @@ The robot never sends a reply frame for `clean` (0 replies to the app's 14 reque
 
 | Command | Data | Reply | Notes |
 |---|---|---|---|
-| `setVoice` | `{"value": 21}` (also 7, 14) | `{using, support, value}` | Voice volume. Max not known yet (21 was the highest the app sent) |
+| `setVoice` | `{"value": 0-63}` | `{using, support, value}` | Voice volume. The app sent 7, 14, 21. A 0-100 sweep from HA: 0-63 accepted and echoed, anything higher clamped to 63. The robot beeps at the new volume each time |
 | `setSprayInfo` | `{"auto": 0 \| 1}` | `{auto}` | Automatic spraying off/on |
 | `sprayWater` | `{"direction": "auto"}` | `{success: 1}` | Spray once now |
 | `wheelsStart` | `{"direction": "forward" \| "backward"}` | `code 0` | *Unknown* app button (wheel cleaning?); no state change seen |
@@ -163,7 +163,7 @@ A `getInfo` poll every 10 s saw every change within one interval.
 ## Not yet known
 
 - Whether our own code can send the control commands (captured, not replayed yet).
-- What `wheelsStart` is, the max `setVoice` value, and confirming `duration: 5` for the 5-minute clean.
+- What `wheelsStart` is, and confirming `duration: 5` for the 5-minute clean.
 - Other `state` / `trigger` values (error, fell off, low battery).
 - What `border` and `glass_type` values mean, and what `water` reads when the tank has water.
 - Whether the station (`WINBASE`) has anything useful.
