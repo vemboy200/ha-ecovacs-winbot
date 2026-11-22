@@ -1,8 +1,10 @@
 """Connection manager for one Winbot.
 
-HA stays connected whenever the robot is on, so it gets every push (start,
-error, finished) the moment it happens, however the clean was started. The
-robot accepts one Bluetooth connection at a time, so the "Let the app connect"
+HA stays connected while the robot is on, so it gets every push (start,
+error, finished) the moment it happens, however the clean was started. After
+30 minutes with nothing happening HA lets go and stops checking, so the robot
+can switch itself off; it reconnects when the robot comes back on or a control
+is used. The robot accepts one Bluetooth connection at a time, so the "Let the app connect"
 switch makes HA let go for the ECOVACS HOME app. Whether the robot is on comes
 from its advertisements.
 """
@@ -30,6 +32,7 @@ from .const import (
     EVENT_RETURNED,
     FALLBACK_AVAILABILITY_SECONDS,
     IDLE_CHECK_INTERVAL,
+    IDLE_RELEASE_AFTER,
 )
 from .winbot import CleanMode, Frame, WinbotClient, WinbotError, WinbotStatus, redact
 
@@ -53,6 +56,9 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
         self.address = address
         self.awake = bluetooth.async_address_present(hass, address, connectable=True)
         self.app_mode = False  # True = HA lets go so the app can connect
+        # True = idle long enough that HA let go so the robot can switch itself off.
+        self.released = False
+        self._last_activity = time.monotonic()
         self.client: WinbotClient | None = None
         self._lock = asyncio.Lock()
         self._unsubs: list[CALLBACK_TYPE] = []
@@ -93,10 +99,39 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
 
     @callback
     def _async_idle_tick(self, _now: object) -> None:
-        if self.awake and not self.data.is_active:  # the active poll covers cleaning
-            if info := bluetooth.async_last_service_info(self.hass, self.address, connectable=True):
-                self.rssi = info.rssi
-            self._schedule_check()
+        if not self.awake or self.data.is_active:  # the active poll covers cleaning
+            return
+        if info := bluetooth.async_last_service_info(self.hass, self.address, connectable=True):
+            self.rssi = info.rssi
+        if self.released or self.app_mode:
+            return
+        if self.data.charging:
+            # It stays on while charging anyway, so letting go gains nothing;
+            # the idle clock starts when it's unplugged.
+            self._mark_active()
+        elif time.monotonic() - self._last_activity >= IDLE_RELEASE_AFTER.total_seconds():
+            self._release()
+            return
+        self._schedule_check()
+
+    @callback
+    def _release(self) -> None:
+        """Let go of the idle robot so it can switch itself off."""
+        _LOGGER.debug(
+            "%s: idle for %s, letting go so the robot can switch off", self.address, IDLE_RELEASE_AFTER
+        )
+        self.released = True
+        if self.client:
+            self.config_entry.async_create_background_task(
+                self.hass, self.client.disconnect(), f"{DOMAIN} release {self.address}"
+            )
+        self.async_update_listeners()
+
+    @callback
+    def _mark_active(self) -> None:
+        """Something happened (cleaning, a button press, a command): restart the idle clock."""
+        self._last_activity = time.monotonic()
+        self.released = False
 
     async def async_shutdown(self) -> None:
         """Stop everything and disconnect."""
@@ -136,6 +171,7 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
         was_awake, self.awake = self.awake, True
         if not was_awake:
             _LOGGER.debug("%s: robot is on", self.address)
+            self._mark_active()
             self._rssi_written = (self.rssi, time.monotonic())
             self.async_update_listeners()
             self._schedule_check()
@@ -189,6 +225,8 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
     @callback
     def _on_status(self, status: WinbotStatus, frame: Frame) -> None:
         """Handle a push from the robot."""
+        if frame.command == "onCleanInfo":  # cleaning, or a button press; battery pushes don't count
+            self._mark_active()
         if frame.command not in KNOWN_PUSHES:
             # Still learning the protocol (errors especially): make new messages easy to spot and report.
             _LOGGER.warning(
@@ -240,13 +278,14 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
         self.async_set_updated_data(status)
         self._update_device_info(status)
         if status.is_active:
+            self._mark_active()
             self._start_active_poll()
         else:
             self._stop_active_poll()
 
     @callback
     def _schedule_check(self) -> None:
-        if self.app_mode:
+        if self.app_mode or self.released:
             return
         self.config_entry.async_create_background_task(
             self.hass, self._async_check(), f"{DOMAIN} check {self.address}", eager_start=True
@@ -318,6 +357,7 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
         """Run a client command (connecting first if needed)."""
         if self.app_mode:
             raise WinbotError("HA is paused so the app can connect")
+        self._mark_active()
         async with self._lock:
             client = self._get_client()
             if not client.is_connected:
@@ -335,6 +375,8 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
             self._stop_active_poll()
             if self.client:
                 await self.client.disconnect()
-        elif self.awake:
-            self._schedule_check()
+        else:
+            self._mark_active()
+            if self.awake:
+                self._schedule_check()
         self.async_update_listeners()

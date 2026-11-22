@@ -8,7 +8,8 @@ rules:
     comment: >
       Push first: HA stays connected while the robot is on and the robot pushes
       every change. getInfo is polled as a backup only, every 60 seconds while
-      cleaning and every 2 minutes while idle.
+      cleaning and every 2 minutes while idle. After 30 minutes idle HA lets go
+      and stops polling, so the robot can switch itself off.
   brands:
     status: done
     comment: Ecovacs brand images from home-assistant/brands are shipped in the integration's brand/ folder.
