@@ -55,6 +55,8 @@ class WinbotClient:
         self._client: BleakClient | None = None
         self._assembler = FrameAssembler()
         self._pending: dict[str, asyncio.Future[Frame]] = {}
+        # Commands the robot answers with a push instead of a reply, keyed by push name.
+        self._push_waiters: dict[str, asyncio.Future[Frame]] = {}
         self._connect_lock = asyncio.Lock()
         self._expected_disconnect = False
         self.status = WinbotStatus()
@@ -105,10 +107,11 @@ class WinbotClient:
     def _handle_disconnect(self, _client: BleakClient) -> None:
         expected = self._expected_disconnect
         self._client = None
-        for fut in self._pending.values():
+        for fut in [*self._pending.values(), *self._push_waiters.values()]:
             if not fut.done():
                 fut.set_exception(WinbotConnectionError("disconnected"))
         self._pending.clear()
+        self._push_waiters.clear()
         _LOGGER.debug("%s: disconnected (expected=%s)", self._ble_device.address, expected)
         if not expected and self._on_disconnect:
             self._on_disconnect()
@@ -124,31 +127,41 @@ class WinbotClient:
                 continue
             if frame.kind is FrameKind.PUSH:
                 self.status = apply_section(self.status, frame.command, frame.data)
+                if (waiter := self._push_waiters.pop(frame.command, None)) and not waiter.done():
+                    waiter.set_result(frame)
                 if self._on_status:
                     self._on_status(self.status, frame)
 
-    async def request(self, command: str, data: dict[str, Any]) -> Frame:
-        """Send a request and wait for its reply. Connects first if needed."""
+    async def request(self, command: str, data: dict[str, Any], *, answer_push: str | None = None) -> Frame:
+        """Send a request and wait for its reply. Connects first if needed.
+
+        answer_push: the robot answers this command with that push instead of a reply
+        (clean -> onCleanInfo, in every capture).
+        """
         await self.connect()
         assert self._client is not None
         msg_id = new_msg_id()
         frame_bytes = encode_request(command, data, msg_id)
         fut: asyncio.Future[Frame] = asyncio.get_running_loop().create_future()
-        self._pending[msg_id] = fut
-        _LOGGER.debug("%s: -> %s %s", self._ble_device.address, command, data)
+        waiters = self._push_waiters if answer_push else self._pending
+        key = answer_push or msg_id
+        waiters[key] = fut
+        _LOGGER.debug("%s: -> %s %s (%d bytes)", self._ble_device.address, command, data, len(frame_bytes))
         try:
             for i in range(0, len(frame_bytes), WRITE_CHUNK):
                 await self._client.write_gatt_char(
                     WRITE_UUID, frame_bytes[i : i + WRITE_CHUNK], response=False
                 )
+            _LOGGER.debug("%s: %s written", self._ble_device.address, command)
             async with asyncio.timeout(REQUEST_TIMEOUT):
                 reply = await fut
         except TimeoutError as err:
-            raise WinbotCommandError(f"no reply to {command}") from err
+            raise WinbotCommandError(f"no answer to {command}") from err
         except BleakError as err:
             raise WinbotConnectionError(str(err)) from err
         finally:
-            self._pending.pop(msg_id, None)
+            if waiters.get(key) is fut:
+                del waiters[key]
         if reply.code not in (0, None):
             raise WinbotCommandError(f"{command} failed: {reply.body}")
         return reply
@@ -178,7 +191,10 @@ class WinbotClient:
         }
         if mode in (CleanMode.DEPTH, CleanMode.BORDER):
             content["windowType"] = "inner"
-        await self.request("clean", {"act": "start", "content": content})
+        await self._clean({"act": "start", "content": content})
+
+    async def _clean(self, data: dict[str, Any]) -> None:
+        await self.request("clean", data, answer_push="onCleanInfo")
 
     def _current_content(self) -> dict[str, Any]:
         return {
@@ -190,22 +206,20 @@ class WinbotClient:
 
     async def pause(self) -> None:
         """Pause the current clean."""
-        await self.request("clean", {"act": "pause", "content": self._current_content()})
+        await self._clean({"act": "pause", "content": self._current_content()})
 
     async def resume(self) -> None:
         """Resume a paused clean."""
-        await self.request("clean", {"act": "resume", "content": self._current_content()})
+        await self._clean({"act": "resume", "content": self._current_content()})
 
     async def stop(self) -> None:
         """Stop the current clean."""
-        await self.request(
-            "clean", {"act": "stop", "content": {"type": self.status.router or str(CleanMode.DEPTH)}}
-        )
+        await self._clean({"act": "stop", "content": {"type": self.status.router or str(CleanMode.DEPTH)}})
 
     async def return_home(self) -> None:
         """Send the robot back (the app's return button)."""
-        await self.request(
-            "clean", {"act": "start", "content": {"type": str(CleanMode.RETURN), "border": 0, "duration": 0}}
+        await self._clean(
+            {"act": "start", "content": {"type": str(CleanMode.RETURN), "border": 0, "duration": 0}}
         )
 
     async def spray_once(self) -> None:

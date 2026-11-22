@@ -100,6 +100,8 @@ The main command. Request data: `{"act": <act>, "content": {...}}`.
 
 Sending `start` again while cleaning switches mode immediately; no need to stop first.
 
+The robot never sends a reply frame for `clean` (0 replies to the app's 14 requests). It answers with an `onCleanInfo` push within about 0.3 s instead, so wait for that push rather than a reply.
+
 ### Other commands
 
 | Command | Data | Reply | Notes |
