@@ -61,6 +61,7 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
         self._event_listeners: list[Callable[[str, dict[str, object] | None], None]] = []
         self.data = WinbotStatus()
         self.rssi: int | None = None
+        self._device_info_written: tuple[str | None, str | None] = (None, None)
         self._rssi_written: tuple[int | None, float] = (None, 0.0)
 
     # Lifecycle
@@ -302,14 +303,17 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
 
     @callback
     def _update_device_info(self, status: WinbotStatus) -> None:
-        if not (status.serial_number or status.firmware):
+        info = (status.serial_number, status.firmware)
+        if not any(info) or info == self._device_info_written:
             return
-        registry = dr.async_get(self.hass)
-        device = registry.async_get_device(identifiers={(DOMAIN, self.address)})
-        if device and (device.serial_number, device.sw_version) != (status.serial_number, status.firmware):
-            registry.async_update_device(
-                device.id, serial_number=status.serial_number, sw_version=status.firmware
-            )
+        self._device_info_written = info
+        # get_or_create updates the existing device and avoids the deprecated async_get_device lookup.
+        dr.async_get(self.hass).async_get_or_create(
+            config_entry_id=self.config_entry.entry_id,
+            identifiers={(DOMAIN, self.address)},
+            serial_number=status.serial_number,
+            sw_version=status.firmware,
+        )
 
     # Used by entities
 
