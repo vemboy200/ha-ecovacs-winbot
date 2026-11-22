@@ -1,0 +1,98 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "description": "Pick the Winbot to set up. Turn it on first so Home Assistant can hear it.",
+        "data": {
+          "address": "Robot"
+        },
+        "data_description": {
+          "address": "Winbots Home Assistant can currently hear through a Bluetooth adapter or proxy."
+        }
+      },
+      "bluetooth_confirm": {
+        "description": "Set up {name}?"
+      }
+    },
+    "abort": {
+      "already_configured": "This Winbot is already set up.",
+      "no_devices_found": "No Winbot found. Turn it on, close the ECOVACS HOME app, and make sure it's in range of a Bluetooth adapter or proxy.",
+      "not_supported": "This device isn't a supported Winbot."
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "attached": {
+        "name": "Attached to glass"
+      },
+      "out_of_water": {
+        "name": "Out of water"
+      }
+    },
+    "button": {
+      "start_border": {
+        "name": "Start edge clean"
+      },
+      "start_timed": {
+        "name": "Start 10-minute clean"
+      },
+      "spray": {
+        "name": "Spray"
+      }
+    },
+    "event": {
+      "cleaning": {
+        "name": "Cleaning",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "finished": "Finished",
+              "interrupted": "Interrupted"
+            }
+          }
+        }
+      }
+    },
+    "sensor": {
+      "status": {
+        "name": "Status",
+        "state": {
+          "off": "Off",
+          "idle": "Idle",
+          "cleaning": "Cleaning",
+          "paused": "Paused",
+          "returning": "Returning",
+          "remote_control": "Remote control"
+        }
+      },
+      "clean_mode": {
+        "name": "Cleaning mode",
+        "state": {
+          "depth": "Deep",
+          "auto": "Auto",
+          "border": "Edge",
+          "spot": "Spot",
+          "return": "Return",
+          "control": "Remote control"
+        }
+      },
+      "error": {
+        "name": "Error code"
+      }
+    },
+    "switch": {
+      "auto_spray": {
+        "name": "Automatic spraying"
+      },
+      "app_mode": {
+        "name": "Let the app connect"
+      }
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "The Winbot didn't accept the command: {error}"
+    }
+  }
+}

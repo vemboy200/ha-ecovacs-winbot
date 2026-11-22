@@ -1,8 +1,8 @@
 """Parse a PacketLogger .pklg (little-endian variant) and print ATT traffic per connection."""
 
+from datetime import datetime
 import struct
 import sys
-from datetime import datetime
 
 path = sys.argv[1]
 data = open(path, "rb").read()
@@ -12,14 +12,29 @@ frag: dict[tuple[int, str], bytearray] = {}
 out = []
 pos = 0
 t_first = None
-ATT_OPS = {0x01: "ERR", 0x02: "MTU_REQ", 0x03: "MTU_RSP", 0x08: "RD_TYPE_REQ", 0x09: "RD_TYPE_RSP",
-           0x0A: "READ_REQ", 0x0B: "READ_RSP", 0x10: "RD_GRP_REQ", 0x11: "RD_GRP_RSP",
-           0x04: "FIND_INFO_REQ", 0x05: "FIND_INFO_RSP", 0x12: "WRITE_REQ", 0x13: "WRITE_RSP",
-           0x52: "WRITE_CMD", 0x1B: "NOTIFY", 0x1D: "INDICATE", 0x1E: "CONFIRM"}
+ATT_OPS = {
+    0x01: "ERR",
+    0x02: "MTU_REQ",
+    0x03: "MTU_RSP",
+    0x08: "RD_TYPE_REQ",
+    0x09: "RD_TYPE_RSP",
+    0x0A: "READ_REQ",
+    0x0B: "READ_RSP",
+    0x10: "RD_GRP_REQ",
+    0x11: "RD_GRP_RSP",
+    0x04: "FIND_INFO_REQ",
+    0x05: "FIND_INFO_RSP",
+    0x12: "WRITE_REQ",
+    0x13: "WRITE_RSP",
+    0x52: "WRITE_CMD",
+    0x1B: "NOTIFY",
+    0x1D: "INDICATE",
+    0x1E: "CONFIRM",
+}
 
 while pos + 4 <= len(data):
     (ln,) = struct.unpack_from("<I", data, pos)
-    rec = data[pos + 4: pos + 4 + ln]
+    rec = data[pos + 4 : pos + 4 + ln]
     pos += 4 + ln
     if len(rec) < 9:
         continue
@@ -43,7 +58,7 @@ while pos + 4 <= len(data):
         hf, alen = struct.unpack_from("<HH", p, 0)
         h, pb = hf & 0x0FFF, (hf >> 12) & 0x3
         direction = "TX" if typ == 0x02 else "RX"
-        body = p[4:4 + alen]
+        body = p[4 : 4 + alen]
         key = (h, direction)
         if pb == 0x1:  # continuation
             if key not in frag:
@@ -58,7 +73,7 @@ while pos + 4 <= len(data):
         if len(buf) - 4 < l2len:
             continue  # wait for more fragments
         frag.pop(key)
-        pdu = bytes(buf[4:4 + l2len])
+        pdu = bytes(buf[4 : 4 + l2len])
         if cid != 0x0004 or not pdu:
             continue
         op = pdu[0]
@@ -66,7 +81,9 @@ while pos + 4 <= len(data):
         if op in (0x52, 0x12, 0x1B, 0x1D, 0x0A, 0x0B) and len(pdu) >= 3 and op not in (0x0B,):
             ah = struct.unpack_from("<H", pdu, 1)[0]
             val = pdu[3:]
-            out.append((ts, f"{direction} h{h} {conns.get(h, '?')} {name} att=0x{ah:04x} len={len(val)} {val.hex()}"))
+            out.append(
+                (ts, f"{direction} h{h} {conns.get(h, '?')} {name} att=0x{ah:04x} len={len(val)} {val.hex()}")
+            )
         else:
             out.append((ts, f"{direction} h{h} {conns.get(h, '?')} {name} {pdu[1:].hex()}"))
 

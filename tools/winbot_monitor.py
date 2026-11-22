@@ -9,7 +9,6 @@ import sys
 import time
 
 from bleak import BleakClient, BleakScanner
-
 from winbot_query import NOTIFY, WRITE, build, crc8
 
 INTERVAL = int(sys.argv[1]) if len(sys.argv) > 1 else 10
@@ -31,10 +30,10 @@ def flatten(d, prefix=""):
 
 
 def handle(msg: bytes) -> None:
-    hdr = msg[3:msg.index(b"{")]
+    hdr = msg[3 : msg.index(b"{")]
     cmd = hdr.split(b"\0")[0].decode()
     mid = hdr.split(b"\0")[2][1:].decode() if hdr.count(b"\0") >= 2 else "?"
-    payload = json.loads(msg[msg.index(b"{"):-1])
+    payload = json.loads(msg[msg.index(b"{") : -1])
     crc = "ok" if crc8(msg[3:-1]) == msg[-1] else "BAD"
     if mid in pending and cmd == "getInfo":
         pending.discard(mid)
@@ -50,7 +49,8 @@ def handle(msg: bytes) -> None:
 async def main() -> None:
     while True:
         dev = await BleakScanner.find_device_by_filter(
-            lambda d, a: (a.local_name or "").startswith("WINBOT"), timeout=30)
+            lambda d, a: (a.local_name or "").startswith("WINBOT"), timeout=30
+        )
         if dev is None:
             print(stamp(), "WINBOT not advertising, retrying", flush=True)
             continue
@@ -60,10 +60,11 @@ async def main() -> None:
             rx.extend(data)
             while b"\n" in rx:
                 i = rx.index(b"\n")
-                msg = bytes(rx[:i]); del rx[: i + 1]
+                msg = bytes(rx[:i])
+                del rx[: i + 1]
                 try:
                     handle(msg)
-                except Exception as err:  # noqa: BLE001
+                except Exception as err:
                     print(stamp(), "unparsed", msg, err, flush=True)
 
         try:
@@ -75,7 +76,7 @@ async def main() -> None:
                     pending.add(frame.split(b"\0")[2][1:5].decode())
                     await client.write_gatt_char(WRITE, frame, response=False)
                     await asyncio.sleep(INTERVAL)
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             print(stamp(), "connection lost:", err, flush=True)
         print(stamp(), "disconnected, reconnecting", flush=True)
 

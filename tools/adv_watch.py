@@ -25,8 +25,11 @@ def cb(dev, adv) -> None:
         adv.tx_power,
     )
     if last.get(dev.address) != key:
-        print(f"[{now:7.1f}s] {name:20} rssi={adv.rssi:4} mfr={dict(key[1])} "
-              f"svcdata={dict(key[2])} svcs={list(key[3])} tx={adv.tx_power}", flush=True)
+        print(
+            f"[{now:7.1f}s] {name:20} rssi={adv.rssi:4} mfr={dict(key[1])} "
+            f"svcdata={dict(key[2])} svcs={list(key[3])} tx={adv.tx_power}",
+            flush=True,
+        )
         last[dev.address] = key
     last_seen[dev.address] = now
 

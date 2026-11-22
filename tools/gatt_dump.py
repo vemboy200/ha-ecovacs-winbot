@@ -17,9 +17,11 @@ async def main() -> None:
     target = None
     for dev, adv in found.values():
         if MFR_ID in adv.manufacturer_data or SVC in adv.service_uuids:
-            print(f"MATCH {dev.address} name={adv.local_name!r} rssi={adv.rssi} "
-                  f"mfr={ {k: v.hex() for k, v in adv.manufacturer_data.items()} } "
-                  f"svcs={adv.service_uuids}")
+            print(
+                f"MATCH {dev.address} name={adv.local_name!r} rssi={adv.rssi} "
+                f"mfr={ {k: v.hex() for k, v in adv.manufacturer_data.items()} } "
+                f"svcs={adv.service_uuids}"
+            )
             target = dev
     if target is None:
         print(f"No Winbot found among {len(found)} devices.")
@@ -36,7 +38,7 @@ async def main() -> None:
                     try:
                         val = await client.read_gatt_char(ch)
                         print(f"    value hex={val.hex()} ascii={val!r}")
-                    except Exception as err:  # noqa: BLE001
+                    except Exception as err:
                         print(f"    read failed: {err}")
                 if "notify" in ch.properties or "indicate" in ch.properties:
                     notify_chars.append(ch)
@@ -48,13 +50,14 @@ async def main() -> None:
         def make_cb(uuid):
             def cb(_sender, data: bytearray) -> None:
                 print(f"[{time.monotonic() - t0:7.2f}s] NOTIFY {uuid[4:8]} hex={data.hex()}")
+
             return cb
 
         for ch in notify_chars:
             try:
                 await client.start_notify(ch, make_cb(ch.uuid))
                 print(f"Subscribed to {ch.uuid}")
-            except Exception as err:  # noqa: BLE001
+            except Exception as err:
                 print(f"Subscribe to {ch.uuid} failed: {err}")
         print(f"\nListening {LISTEN_SECONDS}s for unsolicited notifications...")
         await asyncio.sleep(LISTEN_SECONDS)

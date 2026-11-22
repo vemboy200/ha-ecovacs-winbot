@@ -39,7 +39,8 @@ async def main() -> None:
     cmds = sys.argv[1:] or ["getInfo"]
     assert set(cmds) <= QUERY_ONLY, f"only query commands allowed: {QUERY_ONLY}"
     dev = await BleakScanner.find_device_by_filter(
-        lambda d, a: (a.local_name or "").startswith("WINBOT"), timeout=20)
+        lambda d, a: (a.local_name or "").startswith("WINBOT"), timeout=20
+    )
     if dev is None:
         print("WINBOT not found (asleep, or connected elsewhere?)")
         return
@@ -50,10 +51,11 @@ async def main() -> None:
         rx.extend(data)
         while b"\n" in rx:
             i = rx.index(b"\n")
-            msg = bytes(rx[:i]); del rx[: i + 1]
+            msg = bytes(rx[:i])
+            del rx[: i + 1]
             ok = crc8(msg[3:-1]) == msg[-1]
-            j = msg[msg.index(b"{"):-1]
-            print(f"<- crc_ok={ok} {msg[3:msg.index(b'{')]!r}")
+            j = msg[msg.index(b"{") : -1]
+            print(f"<- crc_ok={ok} {msg[3 : msg.index(b'{')]!r}")
             try:
                 print(json.dumps(json.loads(j), indent=1))
             except ValueError:
@@ -68,10 +70,10 @@ async def main() -> None:
             print(f"-> {frame!r}")
             done.clear()
             for i in range(0, len(frame), 180):
-                await client.write_gatt_char(WRITE, frame[i:i + 180], response=False)
+                await client.write_gatt_char(WRITE, frame[i : i + 180], response=False)
             try:
                 await asyncio.wait_for(done.wait(), 5)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 print("no reply in 5s")
 
 
