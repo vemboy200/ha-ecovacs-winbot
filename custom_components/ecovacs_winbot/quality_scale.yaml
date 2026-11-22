@@ -6,8 +6,9 @@ rules:
   appropriate-polling:
     status: done
     comment: >
-      Push first. getInfo is only polled every 2 minutes while the robot is on
-      and idle, and every 60 seconds while cleaning as a backup for missed pushes.
+      Push first: HA stays connected while the robot is on and the robot pushes
+      every change. getInfo is polled as a backup only, every 60 seconds while
+      cleaning and every 2 minutes while idle.
   brands:
     status: done
     comment: Ecovacs brand images from home-assistant/brands are shipped in the integration's brand/ folder.
