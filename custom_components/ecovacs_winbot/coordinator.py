@@ -264,6 +264,10 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
             self._handle_new_status(status)
 
     def _get_client(self) -> WinbotClient:
+        if self.client is not None and self.client.is_connected:
+            # The robot stops advertising while connected, so HA's Bluetooth
+            # stack may no longer know the device; the open connection still works.
+            return self.client
         ble_device = bluetooth.async_ble_device_from_address(self.hass, self.address, connectable=True)
         if ble_device is None:
             raise WinbotError("robot not in range of a connectable Bluetooth adapter or proxy")
