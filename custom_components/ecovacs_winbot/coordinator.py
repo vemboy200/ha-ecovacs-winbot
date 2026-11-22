@@ -39,7 +39,7 @@ type WinbotConfigEntry = ConfigEntry[WinbotCoordinator]
 
 # Push messages seen so far (docs/protocol.md). Anything else gets logged as a warning.
 KNOWN_TRIGGERS = {"button", "app", "workComplete"}
-KNOWN_PUSHES = {"onBatteryInfo", "onCleanInfo", "onAdsorption", "onGlassType", "onSprayInfo"}
+KNOWN_PUSHES = {"onBatteryInfo", "onCleanInfo", "onAdsorption", "onGlassType", "onSprayInfo", "onCollision"}
 
 
 class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):

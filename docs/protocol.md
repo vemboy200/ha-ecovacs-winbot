@@ -126,7 +126,8 @@ The app's `clean` / `return` request had a wrong CRC (0x6a instead of 0x60), and
 | `onCleanInfo` | same as `getCleanInfo` | Clean started, mode changed, clean finished |
 | `onAdsorption` | `adsorption` | Suction turned on at start |
 | `onGlassType` | `type`, `area` | Shortly after start |
-| `onSprayInfo` | `auto`, `water` | Mid-clean; `water: 0` = **out of water** (the robot's voice said so at the same moment). Value with water present not seen yet (presumably 1) |
+| `onSprayInfo` | `auto`, `water` | Mid-clean; `water: 0` = **out of water** (the robot's voice said so at the same moment). Never sent with water present: nothing after a refill, a clean start, a manual spray, or a finished clean with a full tank. `water` can't be polled either: `getSprayInfo` (alone or in `getInfo`) only returns `auto` |
+| `onCollision` | `direction` | Seen once, `{"direction": "br,"}`, right after a clean finished and just before suction turned off, as the robot was taken off the glass. *Reading:* `br` = bottom right, and the trailing comma suggests a list of sides |
 
 ## Clean state values seen
 
