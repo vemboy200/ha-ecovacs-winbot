@@ -116,6 +116,8 @@ The robot never sends a reply frame for `clean` (0 replies to the app's 14 reque
 
 The app's `clean` / `return` request had a wrong CRC (0x6a instead of 0x60), and the robot still carried it out. So the robot may not check the CRC on requests. Always send the correct one anyway.
 
+**A CRC byte of `0x0A` makes the robot drop the request.** `0x0A` is the `\n` terminator, so the robot apparently sees the frame end one byte early. Found in the volume sweep (3 of 101 requests unanswered) and confirmed by forcing the CRC to `0x0A`: 3 of 3 dropped, while 3 normal requests right after were answered. The message ID is part of the CRC, so pick a new ID until the CRC isn't `0x0A`. Frames from the robot can also end in a `0x0A` CRC, so don't split incoming data on `\n` alone.
+
 ## Push events seen
 
 | Event | Data | When |

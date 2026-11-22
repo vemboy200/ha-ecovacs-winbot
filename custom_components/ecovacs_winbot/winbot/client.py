@@ -142,6 +142,11 @@ class WinbotClient:
         assert self._client is not None
         msg_id = new_msg_id()
         frame_bytes = encode_request(command, data, msg_id)
+        while frame_bytes[-2] == 0x0A:
+            # The robot drops frames whose CRC byte equals the \n terminator
+            # (tested: 3 of 3 dropped). A new message id changes the CRC.
+            msg_id = new_msg_id()
+            frame_bytes = encode_request(command, data, msg_id)
         fut: asyncio.Future[Frame] = asyncio.get_running_loop().create_future()
         waiters = self._push_waiters if answer_push else self._pending
         key = answer_push or msg_id
