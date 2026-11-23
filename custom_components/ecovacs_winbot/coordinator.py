@@ -2,7 +2,7 @@
 
 HA stays connected while the robot is on, so it gets every push (start,
 error, finished) the moment it happens, however the clean was started. After
-30 minutes with nothing happening HA lets go and stops checking, so the robot
+15 minutes with nothing happening HA lets go and stops checking, so the robot
 can switch itself off; it reconnects when the robot comes back on or a control
 is used. The robot accepts one Bluetooth connection at a time, so the "Let the app connect"
 switch makes HA let go for the ECOVACS HOME app. Whether the robot is on comes

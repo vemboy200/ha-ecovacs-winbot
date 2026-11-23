@@ -3,7 +3,7 @@
 A Home Assistant custom integration for the Ecovacs Winbot window cleaning robot. It talks to the robot locally over Bluetooth, either from the Home Assistant machine's own Bluetooth adapter or through an [ESPHome Bluetooth proxy](https://esphome.io/components/bluetooth_proxy.html). No Ecovacs account, cloud or app is needed.
 
 > [!WARNING]
-> Early version (0.1.1, Bronze on the [quality scale](https://www.home-assistant.io/docs/quality_scale/)). Status, push events, the cleaning events and the controls (start, pause, stop, return, every cleaning mode, volume) have been tested from Home Assistant on real hardware. Expect changes.
+> Early version (0.1.2, Bronze on the [quality scale](https://www.home-assistant.io/docs/quality_scale/)). Status, push events, the cleaning events and the controls (start, pause, stop, return, every cleaning mode, volume) have been tested from Home Assistant on real hardware. Expect changes.
 
 ## Why
 
@@ -78,7 +78,7 @@ While the robot is off, everything except Status, Cleaning, Let the app connect 
 - **On or off** comes from the robot's Bluetooth advertisements. No connection is needed for that.
 - **While the robot is on**, Home Assistant stays connected. The robot pushes every change (started, mode changed, error, battery, charging, out of water, finished) the moment it happens, including cleans started from the robot's own button.
 - **Backup:** Home Assistant also asks for the full status (`getInfo`) every 60 seconds while cleaning and every 2 minutes while idle, and reconnects if the connection dropped.
-- **After 30 minutes idle**, Home Assistant lets go of the robot and stops checking, so the robot can switch itself off. Idle means no cleaning, no presses of the robot's buttons and no commands from Home Assistant; battery updates don't count. While it's charging Home Assistant stays connected, and the 30 minutes start when it's unplugged. It connects again when the robot is switched back on or when you use any of its controls in Home Assistant.
+- **After 15 minutes idle**, Home Assistant lets go of the robot and stops checking, so the robot can switch itself off. Idle means no cleaning, no presses of the robot's buttons and no commands from Home Assistant; battery updates don't count. While it's charging Home Assistant stays connected, and the 15 minutes start when it's unplugged. It connects again when the robot is switched back on or when you use any of its controls in Home Assistant.
 - **Every new connection** starts by reading the full status.
 
 Because the robot accepts only one Bluetooth connection at a time, the ECOVACS HOME app can't connect while Home Assistant is connected. Use **Let the app connect** for that.
@@ -150,7 +150,7 @@ script:
 
 - **One connection at a time.** Home Assistant stays connected while the robot is on, so the ECOVACS HOME app can't connect. Turn on **Let the app connect** when you need the app.
 - **Short Bluetooth range.** Ecovacs quotes about 5 m for the app. Through a proxy, expect connection timeouts if the signal is around -90 dBm; move the robot or the proxy closer.
-- **A clean started from the robot's button after 30 minutes idle isn't seen** if the robot was left on. Home Assistant has let go by then and only reconnects when the robot is switched off and on again or a control is used.
+- **A clean started from the robot's button after 15 minutes idle isn't seen** if the robot was left on. Home Assistant has let go by then and only reconnects when the robot is switched off and on again or a control is used.
 - **Events are only seen while connected.** If the connection drops (weak signal) and the robot finishes or errors before Home Assistant gets back in, the Done cleaning event fires on the next status check only if Home Assistant knew a clean was running, and an error that already cleared is missed.
 - **Battery is 5 steps**, not a real percentage.
 - **Error codes aren't decoded yet.** The robot reports numeric codes; they're shown as-is and logged.

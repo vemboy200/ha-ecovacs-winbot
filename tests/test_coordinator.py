@@ -4,18 +4,21 @@ from __future__ import annotations
 
 from collections.abc import Generator
 from datetime import timedelta
+import math
 from unittest.mock import MagicMock, patch
 
 from freezegun.api import FrozenDateTimeFactory
 import pytest
 from pytest_homeassistant.common import MockConfigEntry, async_fire_time_changed
 
-from custom_components.ecovacs_winbot.const import IDLE_CHECK_INTERVAL
+from custom_components.ecovacs_winbot.const import IDLE_CHECK_INTERVAL, IDLE_RELEASE_AFTER
 from custom_components.ecovacs_winbot.winbot import WinbotStatus
 from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.core import HomeAssistant
 
 IDLE = WinbotStatus(state="idle")
+# Idle ticks that still check before the one that lets go.
+CHECKS_BEFORE_RELEASE = math.ceil(IDLE_RELEASE_AFTER / IDLE_CHECK_INTERVAL) - 1
 
 
 @pytest.fixture
@@ -56,7 +59,7 @@ async def test_releases_idle_robot_after_30_minutes(
     mock_config_entry: MockConfigEntry,
     mock_robot: MagicMock,
 ) -> None:
-    """Keep checking while idle, let go after 30 minutes, and come back for a command."""
+    """Keep checking while idle, let go after IDLE_RELEASE_AFTER, and come back for a command."""
     mock_config_entry.add_to_hass(hass)
     await hass.config_entries.async_setup(mock_config_entry.entry_id)
     await hass.async_block_till_done()
@@ -64,23 +67,23 @@ async def test_releases_idle_robot_after_30_minutes(
     assert mock_robot.get_info.await_count == 1
 
     # Backup checks every 2 minutes while idle.
-    for _ in range(14):
+    for _ in range(CHECKS_BEFORE_RELEASE):
         await _tick(hass, freezer, IDLE_CHECK_INTERVAL)
-    assert mock_robot.get_info.await_count == 15
+    assert mock_robot.get_info.await_count == 1 + CHECKS_BEFORE_RELEASE
     assert not coordinator.released
     mock_robot.disconnect.assert_not_awaited()
 
-    # The tick at 30 minutes lets go instead of checking.
+    # The next tick is past IDLE_RELEASE_AFTER and lets go instead of checking.
     await _tick(hass, freezer, IDLE_CHECK_INTERVAL)
     assert coordinator.released
     mock_robot.disconnect.assert_awaited_once()
-    assert mock_robot.get_info.await_count == 15
+    assert mock_robot.get_info.await_count == 1 + CHECKS_BEFORE_RELEASE
 
     # No more checks while released, so nothing keeps the robot awake.
     mock_robot.is_connected = False
     for _ in range(5):
         await _tick(hass, freezer, IDLE_CHECK_INTERVAL)
-    assert mock_robot.get_info.await_count == 15
+    assert mock_robot.get_info.await_count == 1 + CHECKS_BEFORE_RELEASE
 
     # Using a control connects again and restarts the idle clock.
     await coordinator.async_run_command("spray_once")
@@ -94,7 +97,7 @@ async def test_stays_connected_while_charging(
     mock_config_entry: MockConfigEntry,
     mock_robot: MagicMock,
 ) -> None:
-    """Don't let go while charging; the 30 minutes start when it's unplugged."""
+    """Don't let go while charging; the idle clock starts when it's unplugged."""
     charging = WinbotStatus(state="idle", charging=True)
     mock_robot.get_info.return_value = charging
     mock_config_entry.add_to_hass(hass)
@@ -107,10 +110,12 @@ async def test_stays_connected_while_charging(
     assert not coordinator.released
     mock_robot.disconnect.assert_not_awaited()
 
-    # Unplugged: released 30 minutes later, not right away.
+    # Unplugged: released IDLE_RELEASE_AFTER later, not right away.
     mock_robot.get_info.return_value = IDLE
     await _tick(hass, freezer, IDLE_CHECK_INTERVAL)
     assert not coordinator.released
-    for _ in range(15):
+    for _ in range(CHECKS_BEFORE_RELEASE):
         await _tick(hass, freezer, IDLE_CHECK_INTERVAL)
+    assert not coordinator.released
+    await _tick(hass, freezer, IDLE_CHECK_INTERVAL)
     assert coordinator.released
