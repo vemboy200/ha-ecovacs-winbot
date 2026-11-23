@@ -57,15 +57,21 @@ rules:
   entity-unavailable: done
   integration-owner: done
   log-when-unavailable:
-    status: todo
-    comment: Going off and coming back are only logged at debug level.
+    status: done
+    comment: >
+      Going off and coming back are each logged once at info level, not warning:
+      the robot switching itself off after a few idle minutes is normal.
   parallel-updates: done
   reauthentication-flow:
     status: exempt
     comment: The robot has no authentication.
   test-coverage:
-    status: todo
-    comment: The config flow, the idle release, the device info and diagnostics are tested; the entity platforms aren't yet.
+    status: done
+    comment: >
+      Every integration module is above 95%, except the coordinator at 93%;
+      together they're at 97%. The bundled winbot/ protocol library isn't
+      covered as well (its Bluetooth client is tested against the real robot)
+      and needs its own tests when it becomes a PyPI library.
 
   # Gold
   devices: done
@@ -110,5 +116,5 @@ rules:
     status: exempt
     comment: The integration doesn't use HTTP.
   strict-typing:
-    status: todo
-    comment: Not checked with mypy yet.
+    status: done
+    comment: Checked with mypy --strict in CI (the Lint workflow), including the bundled winbot/ library.

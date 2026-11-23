@@ -56,13 +56,15 @@ MODES: dict[str, Mode] = {
     "10 minutes": Mode(CleanMode.DEPTH, border=True, duration=10),
 }
 DEFAULT_MODE = "Deep"
+# The mode name for each cleaning mode the robot reports.
+MODE_NAMES: dict[str, str] = {CleanMode.DEPTH: "Deep", CleanMode.BORDER: "Edge", CleanMode.SPOT: "Spot"}
 
 
 def _mode_from_status(status: WinbotStatus) -> str | None:
     """Name of the mode the robot reports, if it's one of ours."""
     if status.router == CleanMode.DEPTH and status.duration in (5, 10):
         return f"{status.duration} minutes"
-    return {CleanMode.DEPTH: "Deep", CleanMode.BORDER: "Edge", CleanMode.SPOT: "Spot"}.get(status.router)
+    return MODE_NAMES.get(status.router) if status.router else None
 
 
 async def async_setup_entry(

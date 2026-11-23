@@ -15,6 +15,7 @@ import asyncio
 from collections.abc import Callable
 import logging
 import time
+from typing import TypedDict
 
 from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntry
@@ -46,7 +47,14 @@ KNOWN_TRIGGERS = {"button", "app", "workComplete"}
 KNOWN_PUSHES = {"onBatteryInfo", "onCleanInfo", "onAdsorption", "onGlassType", "onSprayInfo", "onCollision"}
 
 
-def device_model(model_id: str | None) -> dict[str, str]:
+class ModelFields(TypedDict, total=False):
+    """The device registry's model fields."""
+
+    model: str
+    model_id: str
+
+
+def device_model(model_id: str | None) -> ModelFields:
     """Return the device registry's model fields for a model id ("Winbot" if it isn't known)."""
     if not model_id:
         return {"model": "Winbot"}
@@ -66,6 +74,8 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
         self.app_mode = False  # True = HA lets go so the app can connect
         # True = idle long enough that HA let go so the robot can switch itself off.
         self.released = False
+        # True after "off" was logged, so "back on" is logged once to match.
+        self._logged_off = False
         self._last_activity = time.monotonic()
         self.client: WinbotClient | None = None
         self._lock = asyncio.Lock()
@@ -189,7 +199,11 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
         self.rssi = service_info.rssi
         was_awake, self.awake = self.awake, True
         if not was_awake:
-            _LOGGER.debug("%s: robot is on", self.address)
+            if self._logged_off:
+                _LOGGER.info("%s: robot is back on", self.address)
+                self._logged_off = False
+            else:
+                _LOGGER.debug("%s: robot is on", self.address)
             self._mark_active()
             self._rssi_written = (self.rssi, time.monotonic())
             self.async_update_listeners()
@@ -222,7 +236,11 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
     def _mark_off(self) -> None:
         if not self.awake:
             return
-        _LOGGER.debug("%s: robot is off (no advertisements)", self.address)
+        # Info, not warning: switching itself off after a few idle minutes is normal.
+        _LOGGER.info(
+            "%s: robot is off or out of range (no advertisements), its entities are unavailable", self.address
+        )
+        self._logged_off = True
         if self.data.is_active:
             self._fire(EVENT_INTERRUPTED)
         self.awake = False

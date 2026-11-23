@@ -11,6 +11,12 @@ force-sort-within-sections = true
 combine-as-imports = true
 known-first-party = ["homeassistant"]
 
+[tool.mypy]
+python_version = "3.14"
+strict = true
+show_error_codes = true
+follow_imports = "silent"
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"

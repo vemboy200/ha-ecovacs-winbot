@@ -24,12 +24,12 @@ TITLE = "Winbot 0BC4"
 IDLE = WinbotStatus(state="idle")
 
 
-def make_service_info(address: str, name: str) -> BluetoothServiceInfoBleak:
+def make_service_info(address: str, name: str, rssi: int = -60) -> BluetoothServiceInfoBleak:
     """Build a connectable advertisement as the Bluetooth integration reports it."""
     return BluetoothServiceInfoBleak(
         name=name,
         address=address,
-        rssi=-60,
+        rssi=rssi,
         manufacturer_data={},
         service_data={},
         service_uuids=[],
@@ -103,14 +103,20 @@ def mock_ble_device(service_info: BluetoothServiceInfoBleak) -> Generator[None]:
 
 
 @pytest.fixture
-def mock_robot(service_info: BluetoothServiceInfoBleak) -> Generator[MagicMock]:
+def mock_robot_class() -> Generator[MagicMock]:
+    """Mock the coordinator's client class, to reach the callbacks it was given."""
+    with patch("custom_components.ecovacs_winbot.coordinator.WinbotClient", autospec=True) as cls:
+        yield cls
+
+
+@pytest.fixture
+def mock_robot(service_info: BluetoothServiceInfoBleak, mock_robot_class: MagicMock) -> Generator[MagicMock]:
     """Mock the coordinator's client: an idle robot, in range, that answers getInfo.
 
     Presence is patched rather than injected: with frozen time the Bluetooth
     stack's own availability tracking would decide the robot went away.
     """
     with (
-        patch("custom_components.ecovacs_winbot.coordinator.WinbotClient", autospec=True) as cls,
         patch(
             "custom_components.ecovacs_winbot.coordinator.bluetooth.async_address_present",
             return_value=True,
@@ -120,7 +126,7 @@ def mock_robot(service_info: BluetoothServiceInfoBleak) -> Generator[MagicMock]:
             return_value=service_info.device,
         ),
     ):
-        client = cls.return_value
+        client = mock_robot_class.return_value
         client.is_connected = True
         client.get_info.return_value = IDLE
         client.status = IDLE
