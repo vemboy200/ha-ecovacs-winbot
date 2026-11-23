@@ -65,13 +65,11 @@ rules:
     comment: The robot has no authentication.
   test-coverage:
     status: todo
-    comment: The config flow, the idle release and the device info are tested; the entity platforms aren't yet.
+    comment: The config flow, the idle release, the device info and diagnostics are tested; the entity platforms aren't yet.
 
   # Gold
   devices: done
-  diagnostics:
-    status: todo
-    comment: No diagnostics platform yet.
+  diagnostics: done
   discovery-update-info:
     status: exempt
     comment: The robot is identified by its Bluetooth address, which doesn't change.

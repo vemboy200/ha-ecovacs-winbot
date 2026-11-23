@@ -49,6 +49,8 @@ class WinbotStatus:
     serial_number: str | None = None
     firmware: str | None = None  # SVER
     model_id: str | None = None  # MID
+    # The whole getRobotInfo section, including BVER and VVER, whose meaning isn't known.
+    robot_info: dict[str, Any] = field(default_factory=dict)
     extra: dict[str, Any] = field(default_factory=dict)
 
     @property
@@ -131,6 +133,7 @@ def apply_section(status: WinbotStatus, name: str, data: dict[str, Any]) -> Winb
             "serial_number": data.get("SN"),
             "firmware": data.get("SVER"),
             "model_id": data.get("MID"),
+            "robot_info": dict(data),
         }
     else:
         return replace(status, extra={**status.extra, key: data})

@@ -169,6 +169,8 @@ script:
 
 **The ECOVACS HOME app can't connect.** Home Assistant holds the connection while the robot is on. Turn on **Let the app connect**.
 
+**Diagnostics.** Go to **Settings → Devices & services → Ecovacs Winbot**, open the menu (⋮) on the robot's entry and choose **Download diagnostics**. It has the connection state, the last status and every version the robot reports (firmware `SVER`, plus `BVER` and `VVER`, whose meaning isn't known yet), with the serial number, device id and Bluetooth address removed. Attach it when you open an issue.
+
 **Debug logs.** Add this to `configuration.yaml`, restart, and include the log when you open an issue. New error codes and unknown messages from the robot are logged as warnings even without debug logging.
 
 ```yaml
