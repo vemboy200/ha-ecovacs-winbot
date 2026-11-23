@@ -11,12 +11,21 @@ The ECOVACS HOME app only talks to the Winbot over Bluetooth, and iOS suspends t
 
 ## Supported devices
 
-| Model | Status |
-|---|---|
-| Winbot W2 Pro Omni (firmware 2.6.0) | Tested |
-| Other Winbots the ECOVACS HOME app reaches over Bluetooth (W1, W2, W2 Omni, W3, ...) | Untested. They may use the same protocol; please open an issue either way |
+**Wi-Fi and Bluetooth**
 
-This integration only talks to the robot over Bluetooth. Some models can also connect to Wi-Fi and the Ecovacs cloud (Ecovacs lists Bluetooth or Wi-Fi control for the W3 Omni); those features aren't used. Home Assistant's built-in [Ecovacs integration](https://www.home-assistant.io/integrations/ecovacs/) works over the cloud, but its library only knows Deebot vacuums and GOAT mowers, not Winbots.
+- Winbot W3 Omni: untested
+- Newer models, as they come out: untested
+
+**Bluetooth only**
+
+- Winbot W2 Pro Omni (firmware 2.6.0): tested
+- Winbot W2 and the other Bluetooth models (W1 series, W2 Omni, W2 Pro, ...): untested
+
+**No Bluetooth or Wi-Fi**
+
+- Older models without app control: not supported
+
+Untested models may use the same protocol; please open an issue either way. This integration only talks to the robot over Bluetooth, so on models that can also join Wi-Fi and the Ecovacs cloud (Ecovacs lists Bluetooth or Wi-Fi control for the W3 Omni), those features aren't used. Home Assistant's built-in [Ecovacs integration](https://www.home-assistant.io/integrations/ecovacs/) works over the cloud, but its library only knows Deebot vacuums and GOAT mowers, not Winbots.
 
 The device page shows the model, looked up from the model id the robot reports (the W2 Pro Omni reports `b7oysg` or one of several other ids, depending on where it was sold). The table of ids comes from Ecovacs's product catalog and covers every Winbot in it as of November 2026, from the 920 to the W3 Omni. If yours shows just "Winbot", it's a newer id: please open an issue with the **Model ID** from the device page.
 
