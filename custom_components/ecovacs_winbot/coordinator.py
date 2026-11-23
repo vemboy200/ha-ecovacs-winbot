@@ -35,6 +35,7 @@ from .const import (
     IDLE_RELEASE_AFTER,
 )
 from .winbot import CleanMode, Frame, WinbotClient, WinbotError, WinbotStatus, redact
+from .winbot.products import model_id_from_name, model_name
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -43,6 +44,13 @@ type WinbotConfigEntry = ConfigEntry[WinbotCoordinator]
 # Push messages seen so far (docs/protocol.md). Anything else gets logged as a warning.
 KNOWN_TRIGGERS = {"button", "app", "workComplete"}
 KNOWN_PUSHES = {"onBatteryInfo", "onCleanInfo", "onAdsorption", "onGlassType", "onSprayInfo", "onCollision"}
+
+
+def device_model(model_id: str | None) -> dict[str, str]:
+    """Return the device registry's model fields for a model id ("Winbot" if it isn't known)."""
+    if not model_id:
+        return {"model": "Winbot"}
+    return {"model": model_name(model_id) or "Winbot", "model_id": model_id}
 
 
 class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
@@ -66,8 +74,19 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
         self._event_listeners: list[Callable[[str, dict[str, object] | None], None]] = []
         self.data = WinbotStatus()
         self.rssi: int | None = None
-        self._device_info_written: tuple[str | None, str | None] = (None, None)
+        self.model_id = self._initial_model_id()
+        self._device_info_written: tuple[str | None, ...] = (None, None, None)
         self._rssi_written: tuple[int | None, float] = (None, 0.0)
+
+    def _initial_model_id(self) -> str | None:
+        """Read the model id from the advertised name, or from the device registry while the robot is off."""
+        info = bluetooth.async_last_service_info(self.hass, self.address, connectable=True)
+        if info and (model_id := model_id_from_name(info.name)):
+            return model_id
+        device = dr.async_get(self.hass).async_get_device_by_identifier(
+            (DOMAIN, self.address), self.config_entry.entry_id
+        )
+        return device.model_id if device else None
 
     # Lifecycle
 
@@ -339,7 +358,9 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
 
     @callback
     def _update_device_info(self, status: WinbotStatus) -> None:
-        info = (status.serial_number, status.firmware)
+        if status.model_id:
+            self.model_id = status.model_id
+        info = (status.serial_number, status.firmware, status.model_id)
         if not any(info) or info == self._device_info_written:
             return
         self._device_info_written = info
@@ -349,6 +370,7 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
             identifiers={(DOMAIN, self.address)},
             serial_number=status.serial_number,
             sw_version=status.firmware,
+            **device_model(status.model_id),
         )
 
     # Used by entities

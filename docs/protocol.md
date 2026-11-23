@@ -57,7 +57,7 @@ Request data: `{"timestamp": <unix seconds>}`. Reply data contains:
 |---|---|---|
 | `getBatteryInfo` | `value`, `isCharging`, `isEnergize`, `isLow` | `value` is a 5-step level (5 = full, 4 ≈ 80%), not a percentage. `isEnergize` 1 while powered |
 | `getAdsorption` | `adsorption` (string `"0"`/`"1"`) | `"1"` = suction on, attached to glass |
-| `getRobotInfo` | `SN`, `MAC`, `DID`, `MID`, `VVER`, `SVER`, `BVER` | Device identity and firmware |
+| `getRobotInfo` | `SN`, `MAC`, `DID`, `MID`, `VVER`, `SVER`, `BVER` | Device identity and firmware. `MID` is Ecovacs's product class id, also in the advertised name: a random code per product and region (`b7oysg` = W2 Pro Omni, `W2_STATION_HIGH_LEVEL_AMR`). Names for the Winbot ids are in `custom_components/ecovacs_winbot/winbot/products.py`, from Ecovacs's product catalog (`pim/product/getProductIotMap`) as saved by ecovacs-deebot.js |
 | `getCleanInfo` | `state`, `trigger`, `cleanState{router, motionState, direction, border, duration}` | See below |
 | `getError` | `code` (list) | `[0]` = no error |
 | `getOTAStatus` | `status`, `progress`, `ver` | |

@@ -2,48 +2,21 @@
 
 from __future__ import annotations
 
-from collections.abc import Generator
 from datetime import timedelta
 import math
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from freezegun.api import FrozenDateTimeFactory
-import pytest
 from pytest_homeassistant.common import MockConfigEntry, async_fire_time_changed
 
 from custom_components.ecovacs_winbot.const import IDLE_CHECK_INTERVAL, IDLE_RELEASE_AFTER
 from custom_components.ecovacs_winbot.winbot import WinbotStatus
-from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.core import HomeAssistant
 
-IDLE = WinbotStatus(state="idle")
+from .conftest import IDLE
+
 # Idle ticks that still check before the one that lets go.
 CHECKS_BEFORE_RELEASE = math.ceil(IDLE_RELEASE_AFTER / IDLE_CHECK_INTERVAL) - 1
-
-
-@pytest.fixture
-def mock_robot(service_info: BluetoothServiceInfoBleak) -> Generator[MagicMock]:
-    """Mock the coordinator's client: an idle robot, in range, that answers getInfo.
-
-    Presence is patched rather than injected: with frozen time the Bluetooth
-    stack's own availability tracking would decide the robot went away.
-    """
-    with (
-        patch("custom_components.ecovacs_winbot.coordinator.WinbotClient", autospec=True) as cls,
-        patch(
-            "custom_components.ecovacs_winbot.coordinator.bluetooth.async_address_present",
-            return_value=True,
-        ),
-        patch(
-            "custom_components.ecovacs_winbot.coordinator.bluetooth.async_ble_device_from_address",
-            return_value=service_info.device,
-        ),
-    ):
-        client = cls.return_value
-        client.is_connected = True
-        client.get_info.return_value = IDLE
-        client.status = IDLE
-        yield client
 
 
 async def _tick(hass: HomeAssistant, freezer: FrozenDateTimeFactory, delta: timedelta) -> None:

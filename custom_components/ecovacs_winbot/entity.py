@@ -7,7 +7,7 @@ from homeassistant.helpers.entity import EntityDescription
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
-from .coordinator import WinbotCoordinator
+from .coordinator import WinbotCoordinator, device_model
 
 
 class WinbotEntity(CoordinatorEntity[WinbotCoordinator]):
@@ -25,8 +25,8 @@ class WinbotEntity(CoordinatorEntity[WinbotCoordinator]):
             identifiers={(DOMAIN, coordinator.address)},
             connections={(CONNECTION_BLUETOOTH, coordinator.address)},
             manufacturer="Ecovacs",
-            model="Winbot",
             name=coordinator.config_entry.title,
+            **device_model(coordinator.model_id),
         )
 
     @property

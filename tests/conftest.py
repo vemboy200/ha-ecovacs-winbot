@@ -14,12 +14,14 @@ from pytest_homeassistant.components.bluetooth import (
 )
 
 from custom_components.ecovacs_winbot.const import DOMAIN
+from custom_components.ecovacs_winbot.winbot import WinbotStatus
 from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.const import CONF_ADDRESS
 
 ADDRESS = "AA:BB:CC:DD:0B:C4"
 NAME = "WINBOT_TEST_0001"
 TITLE = "Winbot 0BC4"
+IDLE = WinbotStatus(state="idle")
 
 
 def make_service_info(address: str, name: str) -> BluetoothServiceInfoBleak:
@@ -98,3 +100,28 @@ def mock_ble_device(service_info: BluetoothServiceInfoBleak) -> Generator[None]:
         return_value=service_info.device,
     ):
         yield
+
+
+@pytest.fixture
+def mock_robot(service_info: BluetoothServiceInfoBleak) -> Generator[MagicMock]:
+    """Mock the coordinator's client: an idle robot, in range, that answers getInfo.
+
+    Presence is patched rather than injected: with frozen time the Bluetooth
+    stack's own availability tracking would decide the robot went away.
+    """
+    with (
+        patch("custom_components.ecovacs_winbot.coordinator.WinbotClient", autospec=True) as cls,
+        patch(
+            "custom_components.ecovacs_winbot.coordinator.bluetooth.async_address_present",
+            return_value=True,
+        ),
+        patch(
+            "custom_components.ecovacs_winbot.coordinator.bluetooth.async_ble_device_from_address",
+            return_value=service_info.device,
+        ),
+    ):
+        client = cls.return_value
+        client.is_connected = True
+        client.get_info.return_value = IDLE
+        client.status = IDLE
+        yield client

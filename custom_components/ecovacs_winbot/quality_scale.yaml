@@ -65,7 +65,7 @@ rules:
     comment: The robot has no authentication.
   test-coverage:
     status: todo
-    comment: Only the config flow is tested so far.
+    comment: The config flow, the idle release and the device info are tested; the entity platforms aren't yet.
 
   # Gold
   devices: done
