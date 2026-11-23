@@ -48,6 +48,10 @@ The device page shows the model, looked up from the model id the robot reports (
 
 The robot advertises as `WINBOT_<id>_<nnnn>`. The Omni station (`WINBASE_...`) is not used.
 
+**Other Ecovacs Bluetooth devices**
+
+Ecovacs's Ultramarine P1 pool robot is also controlled over Bluetooth with the ECOVACS HOME app (retailers list it without Wi-Fi). Whether it uses the same protocol as the Winbots isn't known, so it's not supported, and since Bluetooth drops while it's underwater, Home Assistant could only reach it out of the water. If you own one and are willing to help find out, please open an issue. If it turns out to work the same way, the plan is to support it here under a broader display name, such as "Ecovacs Bluetooth", while keeping the `ecovacs_winbot` domain so existing setups don't break.
+
 ## Requirements
 
 - Home Assistant with the [Bluetooth integration](https://www.home-assistant.io/integrations/bluetooth/) working, through a local adapter or an ESPHome Bluetooth proxy that supports active connections.
