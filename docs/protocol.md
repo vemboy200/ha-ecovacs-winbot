@@ -110,7 +110,7 @@ The robot never sends a reply frame for `clean` (0 replies to the app's 14 reque
 | `setSprayInfo` | `{"auto": 0 \| 1}` | `{auto}` | Automatic spraying off/on |
 | `sprayWater` | `{"direction": "auto"}` | `{success: 1}` | Spray once now |
 | `wheelsStart` | `{"direction": "forward" \| "backward"}` | `code 0` | *Unknown* app button (wheel cleaning?); no state change seen |
-| `wheelMove` | `{"angle": 360, "speed": 2, "act": "move"}` | none | Remote-control driving: sent every ~100 ms while the joystick is held; `angle` 360 and 180 seen. State goes to `move`, router `control`. Not planned for HA |
+| `wheelMove` | `{"angle": 360, "speed": 2, "act": "move"}` | none | Remote-control driving: sent every ~100 ms while the joystick is held; `angle` 360 and 180 seen. State goes to `move`, router `control`. See [Remote control](#remote-control) |
 
 ### Checksum quirk
 
@@ -160,6 +160,34 @@ Pause shows as state `clean` with motionState `pause`. A stop from the app or bu
 ```
 
 A `getInfo` poll every 10 s saw every change within one interval.
+
+## Remote control
+
+The ECOVACS HOME app needs a cloud account and an internet connection even to drive the robot over Bluetooth, so local remote control in Home Assistant would replace the app's joystick entirely. Not built yet.
+
+**Known** (one capture, 2026-11-22):
+
+- The app sends `wheelMove {"angle": <n>, "speed": 2, "act": "move"}` about every 100 ms while the joystick is held, and the robot doesn't reply.
+- While driving, `onCleanInfo` reports state `move` with router `control`.
+- Only `angle` 360 and 180 and `speed` 2 have been seen.
+
+**Not known yet:**
+
+- Which way 360 and 180 point, and whether `angle` takes any value from 0 to 360 or only a few directions. The joystick looks analog, but the app may round it.
+- Whether `speed` follows how far the joystick is pushed or is a few fixed levels.
+- What the app sends on release, and whether there's a stop `act` or a rotate command.
+- What the robot does when `wheelMove` messages stop: whether it stops by itself (as the 100 ms repeat suggests, but that's a guess) or keeps driving until told to stop. This decides whether a dropped Bluetooth link mid-move is safe.
+- How well a 100 ms stream works through an ESPHome Bluetooth proxy.
+
+**Next tests** (both make the robot move on the window):
+
+1. A PacketLogger capture driving each direction and a few diagonals, pushing the joystick only slightly and then fully, releasing, and trying any rotate controls.
+2. Sending one short `wheelMove` burst from a script and watching whether the robot stops when it ends.
+
+**Plan for Home Assistant** (smallest pieces first):
+
+1. A `remote` entity, like TV integrations use, with `forward`, `back`, `left` and `right` commands at a fixed speed. `remote.send_command` already takes `hold_secs`, so the integration repeats `wheelMove` every 100 ms for that long, then stops. Enabled by default, with a copy-paste D-pad dashboard card in the README. Home Assistant's dashboard has no hold-to-drive control (a tap fires once, `hold_action` fires once with no release event), so from a dashboard each tap is a nudge, not the app's continuous joystick.
+2. Only if angle or speed turn out to be truly variable: an entity action like `ecovacs_winbot.drive` with validated `angle`, `speed` and `duration` fields, for scripts and custom cards. Not raw protocol through `vacuum.send_command`.
 
 ## Not yet known
 
