@@ -54,6 +54,7 @@ Ecovacs's Ultramarine P1 pool robot is also controlled over Bluetooth with the E
 
 ## Requirements
 
+- Home Assistant 2026.9 or newer.
 - Home Assistant with the [Bluetooth integration](https://www.home-assistant.io/integrations/bluetooth/) working, through a local adapter or an ESPHome Bluetooth proxy that supports active connections.
 - The robot within Bluetooth range of that adapter or proxy. A signal around -80 dBm or better is comfortable; near -90 dBm connections time out.
 
