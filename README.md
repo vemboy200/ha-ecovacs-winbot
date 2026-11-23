@@ -3,7 +3,7 @@
 A Home Assistant custom integration for the Ecovacs Winbot window cleaning robot. It talks to the robot locally over Bluetooth, either from the Home Assistant machine's own Bluetooth adapter or through an [ESPHome Bluetooth proxy](https://esphome.io/components/bluetooth_proxy.html). No Ecovacs account, cloud or app is needed.
 
 > [!WARNING]
-> Early version (0.1.3, Bronze on the [quality scale](https://www.home-assistant.io/docs/quality_scale/)). Status, push events, the cleaning events and the controls (start, pause, stop, return, every cleaning mode, volume) have been tested from Home Assistant on real hardware. Expect changes.
+> Early version, Platinum on the [quality scale](https://www.home-assistant.io/docs/quality_scale/) (self-assessed: every rule is done or exempt, see [quality_scale.yaml](custom_components/ecovacs_winbot/quality_scale.yaml)). Status, push events, the cleaning events and the controls (start, pause, stop, return, every cleaning mode, volume) have been tested from Home Assistant on real hardware. Expect changes.
 
 ## Why
 
