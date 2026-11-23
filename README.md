@@ -13,12 +13,16 @@ The ECOVACS HOME app only talks to the Winbot over Bluetooth, and iOS suspends t
 
 **Wi-Fi and Bluetooth**
 
-- Winbot W3 Omni: untested
+- Winbot W3 Omni: untested (Ecovacs lists both Bluetooth and Wi-Fi control)
 - Newer models, as they come out: untested
 
 **Bluetooth only**
 
 - Winbot W2 Pro Omni (firmware 2.6.0): tested
+- Winbot Mini: untested (reviews say it doesn't join Wi-Fi)
+
+**Bluetooth, Wi-Fi not confirmed either way**
+
 - Winbot W2 Pro Omni 7-11: untested
 - Winbot W2s Omni: untested
 - Winbot W2s: untested
@@ -31,15 +35,14 @@ The ECOVACS HOME app only talks to the Winbot over Bluetooth, and iOS suspends t
 - Winbot Neo: untested
 - Winbot Neo Mini: untested
 - Winbot Mini 2: untested
-- Winbot Mini: untested
 - Winbot Lite: untested
 - Winbot 920: untested
 
-**No Bluetooth or Wi-Fi**
+**No app connection**
 
-- Older models without app control: not supported
+- Winbot X and older models, which use a remote control instead of the app: not supported
 
-The models come from Ecovacs's product catalog, which lists every one of them as a Bluetooth product. Only the W3 Omni is known to have Wi-Fi as well, so if another model turns out to have it too, please say so. Untested models may use the same protocol; please open an issue either way. This integration only talks to the robot over Bluetooth, so on models that can also join Wi-Fi and the Ecovacs cloud (Ecovacs lists Bluetooth or Wi-Fi control for the W3 Omni), those features aren't used. Home Assistant's built-in [Ecovacs integration](https://www.home-assistant.io/integrations/ecovacs/) works over the cloud, but its library only knows Deebot vacuums and GOAT mowers, not Winbots.
+All the Bluetooth models come from Ecovacs's product catalog, which lists every Winbot as a Bluetooth product, the W3 Omni included, so it doesn't say which ones also have Wi-Fi. If you know one of them does, please say so. Untested models may use the same protocol; please open an issue either way. This integration only talks to the robot over Bluetooth, so on models that can also join Wi-Fi and the Ecovacs cloud, those features aren't used. Home Assistant's built-in [Ecovacs integration](https://www.home-assistant.io/integrations/ecovacs/) works over the cloud, but its library only knows Deebot vacuums and GOAT mowers, not Winbots.
 
 The device page shows the model, looked up from the model id the robot reports (the W2 Pro Omni reports `b7oysg` or one of several other ids, depending on where it was sold). The table of ids comes from Ecovacs's product catalog and covers every Winbot in it as of November 2026, from the 920 to the W3 Omni. If yours shows just "Winbot", it's a newer id: please open an issue with the **Model ID** from the device page.
 
