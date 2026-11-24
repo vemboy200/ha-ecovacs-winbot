@@ -30,6 +30,9 @@
           "error": "mdi:alert-circle",
           "out_of_water": "mdi:water-off"
         }
+      },
+      "bumper": {
+        "default": "mdi:car-brake-alert"
       }
     },
     "number": {

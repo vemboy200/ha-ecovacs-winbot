@@ -61,6 +61,16 @@
             }
           }
         }
+      },
+      "bumper": {
+        "name": "Bumper",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "bumped": "Bumped"
+            }
+          }
+        }
       }
     },
     "number": {

@@ -27,6 +27,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from .const import (
     ACTIVE_POLL_INTERVAL,
     DOMAIN,
+    EVENT_BUMPED,
     EVENT_ERROR,
     EVENT_FINISHED,
     EVENT_INTERRUPTED,
@@ -285,6 +286,9 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
         """Handle a push from the robot."""
         if frame.command == "onCleanInfo":  # cleaning, or a button press; battery pushes don't count
             self._mark_active()
+        if frame.command == "onCollision":
+            # Always "br," so far, whichever edge or bumper was hit (docs/protocol.md).
+            self._fire(EVENT_BUMPED, {"code": frame.data.get("direction")})
         if frame.command not in KNOWN_PUSHES:
             # Still learning the protocol (errors especially): make new messages easy to spot and report.
             _LOGGER.warning(

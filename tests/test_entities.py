@@ -67,6 +67,7 @@ VOLUME = "number.winbot_0bc4_voice_volume"
 SPRAY = "button.winbot_0bc4_spray"
 EVENT = "event.winbot_0bc4_cleaning"
 CHARGE_COUNT = "sensor.winbot_0bc4_charge_count"
+BUMPER = "event.winbot_0bc4_bumper"
 
 READY = replace(IDLE, battery_level=4, charging=False, attached=True, auto_spray=True, volume=35)
 CLEANING = replace(READY, state="clean", trigger="app", router="depth", motion_state="working")
@@ -82,6 +83,7 @@ async def _setup(hass: HomeAssistant, entry: MockConfigEntry, robot: MagicMock, 
     await hass.async_block_till_done()
 
 
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
 @pytest.mark.parametrize("platform", PLATFORMS)
 async def test_entities(
     hass: HomeAssistant,
@@ -409,6 +411,37 @@ async def test_out_of_water_event(
     on_status(dry, Frame(FrameKind.PUSH, "onSprayInfo", None, {}, crc_ok=True))
     await hass.async_block_till_done()
     assert hass.states.get(EVENT).state == event.state  # not again while still out of water
+
+
+async def test_bumper_disabled_by_default(
+    hass: HomeAssistant,
+    entity_registry: er.EntityRegistry,
+    mock_config_entry: MockConfigEntry,
+    mock_robot: MagicMock,
+) -> None:
+    """The bumper event entity is disabled by default."""
+    await _setup(hass, mock_config_entry, mock_robot, READY)
+    assert entity_registry.async_get(BUMPER).disabled_by is er.RegistryEntryDisabler.INTEGRATION
+    assert hass.states.get(BUMPER) is None
+
+
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
+async def test_bumper_event(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_robot: MagicMock,
+    mock_robot_class: MagicMock,
+) -> None:
+    """A collision push fires the bumper event with the robot's code, and not the cleaning event."""
+    await _setup(hass, mock_config_entry, mock_robot, READY)
+    on_status = mock_robot_class.call_args.kwargs["on_status"]
+
+    on_status(READY, Frame(FrameKind.PUSH, "onCollision", None, {"data": {"direction": "br,"}}, crc_ok=True))
+    await hass.async_block_till_done()
+    bumper = hass.states.get(BUMPER)
+    assert bumper.attributes["event_type"] == "bumped"
+    assert bumper.attributes["code"] == "br,"
+    assert hass.states.get(EVENT).state == STATE_UNKNOWN
 
 
 async def test_reconnects_after_drop(
