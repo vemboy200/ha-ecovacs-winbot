@@ -78,6 +78,11 @@
         "name": "Voice volume"
       }
     },
+    "remote": {
+      "remote": {
+        "name": "Remote control"
+      }
+    },
     "sensor": {
       "status": {
         "name": "Status",
@@ -137,6 +142,32 @@
     },
     "unknown_mode": {
       "message": "Unknown cleaning mode \"{mode}\". Pick one of: {modes}."
+    },
+    "unknown_command": {
+      "message": "Unknown remote command \"{command}\". Use one of: {commands}."
+    },
+    "drive_too_long": {
+      "message": "Drives are limited to {max} seconds at a time."
+    }
+  },
+  "services": {
+    "drive": {
+      "name": "Drive",
+      "description": "Drives the Winbot across the window toward any direction, like the app's joystick. It stops by itself about a second after the drive ends.",
+      "fields": {
+        "angle": {
+          "name": "Direction",
+          "description": "Direction on the window in degrees: 0 or 360 up, 90 right, 180 down, 270 left, or anything in between. The robot turns to face it first."
+        },
+        "speed": {
+          "name": "Speed",
+          "description": "1 (slow) to 3 (fast)."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "How long to keep driving, in seconds. 0 is a short nudge."
+        }
+      }
     }
   }
 }

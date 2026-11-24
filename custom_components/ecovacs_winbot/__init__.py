@@ -2,11 +2,30 @@
 
 from __future__ import annotations
 
+import voluptuous as vol
+
+from homeassistant.components.remote import DOMAIN as REMOTE_DOMAIN
 from homeassistant.const import CONF_ADDRESS, Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import config_validation as cv, entity_registry as er, service
+from homeassistant.helpers.typing import ConfigType
 
+from .const import DEFAULT_SPEED, DOMAIN, MAX_DRIVE_SECONDS, WinbotService, WinbotServiceArgument
 from .coordinator import WinbotConfigEntry, WinbotCoordinator
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
+DRIVE_SCHEMA = cv.make_entity_service_schema(
+    {
+        vol.Required(WinbotServiceArgument.ANGLE): vol.All(vol.Coerce(int), vol.Range(min=0, max=360)),
+        vol.Optional(WinbotServiceArgument.SPEED, default=DEFAULT_SPEED): vol.All(
+            vol.Coerce(int), vol.Range(min=1, max=3)
+        ),
+        vol.Optional(WinbotServiceArgument.DURATION, default=1): vol.All(
+            vol.Coerce(float), vol.Range(min=0, max=MAX_DRIVE_SECONDS)
+        ),
+    }
+)
 
 # Entity keys from earlier versions: buttons that moved into the vacuum entity,
 # and binary sensors that duplicated the battery and charging entities.
@@ -28,10 +47,24 @@ PLATFORMS: list[Platform] = [
     Platform.BUTTON,
     Platform.EVENT,
     Platform.NUMBER,
+    Platform.REMOTE,
     Platform.SENSOR,
     Platform.SWITCH,
     Platform.VACUUM,
 ]
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Register the drive action."""
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        WinbotService.DRIVE,
+        entity_domain=REMOTE_DOMAIN,
+        schema=DRIVE_SCHEMA,
+        func="async_drive",
+    )
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: WinbotConfigEntry) -> bool:

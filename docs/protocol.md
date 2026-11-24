@@ -207,7 +207,7 @@ The robot was plugged in already full (battery LEDs steady, which on this robot 
 
 ## Remote control
 
-The ECOVACS HOME app needs a cloud account and an internet connection even to drive the robot over Bluetooth, so local remote control in Home Assistant would replace the app's joystick entirely. Not built yet.
+The ECOVACS HOME app needs a cloud account and an internet connection even to drive the robot over Bluetooth, so local remote control in Home Assistant replaces the app's joystick entirely. The integration has it as a Remote control entity and a `drive` action (see below).
 
 **Known** (app capture 2026-11-22, and `tools/winbot_drive.py` on the window 2026-11-23, robot attached to the glass):
 
@@ -224,8 +224,10 @@ The ECOVACS HOME app needs a cloud account and an internet connection even to dr
 - Whether the app varies `speed` with how far the joystick is pushed, and exactly what speed 4 and above fall back to.
 - Whether the app sends anything on release (no capture of that yet), and whether other `act` values exist.
 - How well a 100 ms stream works through an ESPHome Bluetooth proxy (the script talked to the robot directly from a Mac).
+- What `wheelMove` does during a clean.
+- Whether `angle` 0 works like 360. The library sends 360 for 0, since 360 is what the app sends.
 
-**Plan for Home Assistant** (smallest pieces first):
+**In Home Assistant** (both built; tested from the Mac script, not yet through Home Assistant):
 
 1. A `remote` entity, like TV integrations use, with `up`, `down`, `left` and `right` commands (angles 360, 180, 270, 90) at a fixed speed. Since the robot stops by itself, a dropped connection is safe. `remote.send_command` already takes `hold_secs`, so the integration repeats `wheelMove` every 100 ms for that long, then stops. Enabled by default, with a copy-paste D-pad dashboard card in the README. Home Assistant's dashboard has no hold-to-drive control (a tap fires once, `hold_action` fires once with no release event), so from a dashboard each tap is a nudge, not the app's continuous joystick.
 2. Since the angle is analog (45 worked): an entity action like `ecovacs_winbot.drive` with validated `angle` (0 to 360), `speed` (1 to 3) and `duration` fields, for scripts and custom cards. Not raw protocol through `vacuum.send_command`.

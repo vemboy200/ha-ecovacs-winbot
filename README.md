@@ -3,7 +3,7 @@
 A Home Assistant custom integration for the Ecovacs Winbot window cleaning robot. It talks to the robot locally over Bluetooth, either from the Home Assistant machine's own Bluetooth adapter or through an [ESPHome Bluetooth proxy](https://esphome.io/components/bluetooth_proxy.html). No Ecovacs account, cloud or app is needed.
 
 > [!WARNING]
-> Early version, Platinum on the [quality scale](https://www.home-assistant.io/docs/quality_scale/) (self-assessed: every rule is done or exempt, see [quality_scale.yaml](custom_components/ecovacs_winbot/quality_scale.yaml)). Status, push events, the cleaning events and the controls (start, pause, stop, return, every cleaning mode, volume) have been tested from Home Assistant on real hardware. Expect changes.
+> Early version, Platinum on the [quality scale](https://www.home-assistant.io/docs/quality_scale/) (self-assessed: every rule is done or exempt, see [quality_scale.yaml](custom_components/ecovacs_winbot/quality_scale.yaml)). Status, push events, the cleaning events and the controls (start, pause, stop, return, every cleaning mode, volume) have been tested from Home Assistant on real hardware. Remote-control driving was tested from a script on a Mac with the same messages, not yet through Home Assistant. Expect changes.
 
 ## Why
 
@@ -101,6 +101,7 @@ There are no options to configure afterwards.
 | Spray | Button | Spray once |
 | Automatic spraying | Switch | Let the robot spray on its own while cleaning |
 | Voice volume | Number | Volume of the robot's voice prompts, 0-63 (the app was seen sending 7, 14 and 21). The robot beeps at the new volume when it changes |
+| Remote control | Remote | Drive the robot across the window with the `up`, `down`, `left` and `right` commands, like the app's joystick (see [Remote control](#remote-control)). On while the robot is on; it has no power commands |
 | Let the app connect | Switch | While on, Home Assistant stays off the robot so the ECOVACS HOME app can connect (see below) |
 | Last trigger | Sensor (diagnostic, disabled by default) | What the robot says caused its last state change: Robot button, App or Home Assistant (the robot doesn't tell them apart), or Work complete. The same value is also the Status sensor's `last_trigger` attribute |
 | Error code | Sensor (diagnostic) | Raw error codes; `0` means no error |
@@ -124,6 +125,113 @@ Because the robot accepts only one Bluetooth connection at a time, the ECOVACS H
 ### Let the app connect
 
 Turning this switch on makes Home Assistant disconnect and stop connecting, so the ECOVACS HOME app can use the robot. Status (on/off) and signal strength keep updating, because they only need advertisements. The other sensors keep their last values, the controls are unavailable, and no Cleaning events fire while it's on. Turn it off and Home Assistant reconnects and reads the full status. It resets to off when Home Assistant restarts.
+
+### Remote control
+
+The Remote control entity drives the robot without the app. Send `up`, `down`, `left` or `right` with `remote.send_command`; `hold_secs` is how long to keep driving (at most 10 seconds), and without it each command is a nudge of about a second. The robot first turns to face the direction, then drives, and it may back up instead of turning around. It stops by itself about a second after the last move message, also if the connection drops, and stops when it bumps into the frame.
+
+For any direction and speed, use the **Drive** action below. Home Assistant's dashboard has no hold-to-drive control (a button fires once when tapped and once when held, with nothing on release), so from a dashboard each press is one drive of a fixed length, not the app's continuous joystick.
+
+A D-pad for a dashboard (tap for a nudge, hold for 2 seconds of driving; replace the entity ID with yours):
+
+```yaml
+type: horizontal-stack
+cards:
+  - type: button
+    icon: mdi:arrow-left-bold
+    name: Left
+    tap_action:
+      action: perform-action
+      perform_action: remote.send_command
+      target:
+        entity_id: remote.winbot_0bc4_remote_control
+      data:
+        command: left
+    hold_action:
+      action: perform-action
+      perform_action: remote.send_command
+      target:
+        entity_id: remote.winbot_0bc4_remote_control
+      data:
+        command: left
+        hold_secs: 2
+  - type: button
+    icon: mdi:arrow-up-bold
+    name: Up
+    tap_action:
+      action: perform-action
+      perform_action: remote.send_command
+      target:
+        entity_id: remote.winbot_0bc4_remote_control
+      data:
+        command: up
+    hold_action:
+      action: perform-action
+      perform_action: remote.send_command
+      target:
+        entity_id: remote.winbot_0bc4_remote_control
+      data:
+        command: up
+        hold_secs: 2
+  - type: button
+    icon: mdi:arrow-down-bold
+    name: Down
+    tap_action:
+      action: perform-action
+      perform_action: remote.send_command
+      target:
+        entity_id: remote.winbot_0bc4_remote_control
+      data:
+        command: down
+    hold_action:
+      action: perform-action
+      perform_action: remote.send_command
+      target:
+        entity_id: remote.winbot_0bc4_remote_control
+      data:
+        command: down
+        hold_secs: 2
+  - type: button
+    icon: mdi:arrow-right-bold
+    name: Right
+    tap_action:
+      action: perform-action
+      perform_action: remote.send_command
+      target:
+        entity_id: remote.winbot_0bc4_remote_control
+      data:
+        command: right
+    hold_action:
+      action: perform-action
+      perform_action: remote.send_command
+      target:
+        entity_id: remote.winbot_0bc4_remote_control
+      data:
+        command: right
+        hold_secs: 2
+```
+
+## Actions
+
+### Drive (`ecovacs_winbot.drive`)
+
+Drives the robot toward any direction, for scripts and custom cards. Target the Remote control entity.
+
+| Field | Required | Description |
+|---|---|---|
+| `angle` | Yes | Direction on the window in degrees: 0 or 360 up, 90 right, 180 down, 270 left, or anything in between (45 drives diagonally up and right) |
+| `speed` | No | 1 (slow) to 3 (fast). Default 2, the speed the app uses |
+| `duration` | No | Seconds to keep driving, 0 to 10. Default 1. 0 is a nudge of about a second |
+
+```yaml
+action: ecovacs_winbot.drive
+target:
+  entity_id: remote.winbot_0bc4_remote_control
+data:
+  angle: 45
+  speed: 3
+  duration: 2
+```
 
 ## Use cases
 
@@ -192,7 +300,8 @@ script:
 - **Events are only seen while connected.** If the connection drops (weak signal) and the robot finishes or errors before Home Assistant gets back in, the Done cleaning event fires on the next status check only if Home Assistant knew a clean was running, and an error that already cleared is missed.
 - **Battery is 5 steps**, not a real percentage.
 - **Error codes aren't decoded yet.** The robot reports numeric codes; they're shown as-is and logged.
-- **Not available yet:** remote-control driving, voice language, the Omni station.
+- **Not available yet:** voice language, the Omni station.
+- **Remote control drives for a set time.** There's no hold-to-drive control in Home Assistant's dashboard, and each drive is limited to 10 seconds. A new drive waits for the one before it to finish, and so do other commands sent meanwhile. Driving through an ESPHome Bluetooth proxy hasn't been tested yet, and what the robot does with a drive command during a clean isn't known.
 - **No authentication on the robot.** Anything within Bluetooth range can read its status and probably control it. Nothing an integration can change.
 
 ## Troubleshooting

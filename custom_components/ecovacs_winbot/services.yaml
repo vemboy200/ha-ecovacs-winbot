@@ -1,0 +1,33 @@
+drive:
+  target:
+    entity:
+      integration: ecovacs_winbot
+      domain: remote
+  fields:
+    angle:
+      required: true
+      example: 360
+      selector:
+        number:
+          min: 0
+          max: 360
+          step: 1
+          unit_of_measurement: "°"
+          mode: slider
+    speed:
+      default: 2
+      selector:
+        number:
+          min: 1
+          max: 3
+          step: 1
+          mode: slider
+    duration:
+      default: 1
+      selector:
+        number:
+          min: 0
+          max: 10
+          step: 0.1
+          unit_of_measurement: s
+          mode: box

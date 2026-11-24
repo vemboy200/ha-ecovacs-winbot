@@ -1,8 +1,8 @@
 rules:
   # Bronze
   action-setup:
-    status: exempt
-    comment: The integration does not register any custom actions.
+    status: done
+    comment: The drive action is registered in async_setup, for the remote entity.
   appropriate-polling:
     status: done
     comment: >
@@ -23,8 +23,8 @@ rules:
       Assistant imports, MIT, in this repository). It has to become its own PyPI
       library before a core submission, where bundling isn't allowed.
   docs-actions:
-    status: exempt
-    comment: The integration does not register any custom actions.
+    status: done
+    comment: The README documents the drive action and the remote entity's commands.
   docs-conditions:
     status: exempt
     comment: The integration does not provide any custom conditions.

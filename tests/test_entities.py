@@ -17,9 +17,15 @@ from pytest_homeassistant.common import (
 )
 from pytest_homeassistant.components.bluetooth import inject_bluetooth_service_info
 from syrupy.assertion import SnapshotAssertion
+import voluptuous as vol
 
 from custom_components.ecovacs_winbot import PLATFORMS
-from custom_components.ecovacs_winbot.const import ACTIVE_POLL_INTERVAL, IDLE_CHECK_INTERVAL
+from custom_components.ecovacs_winbot.const import (
+    ACTIVE_POLL_INTERVAL,
+    DOMAIN,
+    IDLE_CHECK_INTERVAL,
+    WinbotService,
+)
 from custom_components.ecovacs_winbot.winbot import CleanMode, Frame, FrameKind, WinbotError, WinbotStatus
 from custom_components.ecovacs_winbot.winbot.models import parse_stats
 from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
@@ -28,6 +34,14 @@ from homeassistant.components.number import (
     ATTR_VALUE,
     DOMAIN as NUMBER_DOMAIN,
     SERVICE_SET_VALUE,
+)
+from homeassistant.components.remote import (
+    ATTR_COMMAND,
+    ATTR_DELAY_SECS,
+    ATTR_HOLD_SECS,
+    ATTR_NUM_REPEATS,
+    DOMAIN as REMOTE_DOMAIN,
+    SERVICE_SEND_COMMAND,
 )
 from homeassistant.components.switch import DOMAIN as SWITCH_DOMAIN
 from homeassistant.components.vacuum import (
@@ -69,6 +83,7 @@ EVENT = "event.winbot_0bc4_cleaning"
 CHARGE_COUNT = "sensor.winbot_0bc4_charge_count"
 BUMPER = "event.winbot_0bc4_bumper"
 LAST_TRIGGER = "sensor.winbot_0bc4_last_trigger"
+REMOTE = "remote.winbot_0bc4_remote_control"
 
 READY = replace(IDLE, battery_level=4, charging=False, attached=True, auto_spray=True, volume=35)
 CLEANING = replace(READY, state="clean", trigger="app", router="depth", motion_state="working")
@@ -210,6 +225,15 @@ async def test_vacuum_error(
         (SWITCH_DOMAIN, SERVICE_TURN_ON, AUTO_SPRAY, {}, "set_auto_spray", (True,)),
         (NUMBER_DOMAIN, SERVICE_SET_VALUE, VOLUME, {ATTR_VALUE: 21}, "set_volume", (21,)),
         (BUTTON_DOMAIN, SERVICE_PRESS, SPRAY, {}, "spray_once", ()),
+        (REMOTE_DOMAIN, SERVICE_SEND_COMMAND, REMOTE, {ATTR_COMMAND: "up"}, "drive", (360, 2, 0)),
+        (
+            DOMAIN,
+            WinbotService.DRIVE,
+            REMOTE,
+            {"angle": 45, "speed": 3, "duration": 2},
+            "drive",
+            (45, 3, 2.0),
+        ),
     ],
 )
 async def test_commands_and_failures(
@@ -251,7 +275,7 @@ async def test_app_mode(
     mock_robot.disconnect.assert_awaited_once()
     mock_robot.is_connected = False
     assert hass.states.get(APP_MODE).state == STATE_ON
-    for entity_id in (VACUUM, AUTO_SPRAY, VOLUME, SPRAY):
+    for entity_id in (VACUUM, AUTO_SPRAY, VOLUME, SPRAY, REMOTE):
         assert hass.states.get(entity_id).state == STATE_UNAVAILABLE
 
     get_info_calls = mock_robot.get_info.await_count
@@ -577,3 +601,99 @@ async def test_retired_entities_removed(
     )
     await _setup(hass, mock_config_entry, mock_robot, READY)
     assert entity_registry.async_get(old.entity_id) is None
+
+
+async def test_remote_send_command(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_robot: MagicMock,
+) -> None:
+    """Each remote command drives its direction for hold_secs, repeated as asked."""
+    await _setup(hass, mock_config_entry, mock_robot, READY)
+    assert hass.states.get(REMOTE).state == STATE_ON
+
+    await hass.services.async_call(
+        REMOTE_DOMAIN,
+        SERVICE_SEND_COMMAND,
+        {
+            ATTR_ENTITY_ID: REMOTE,
+            ATTR_COMMAND: ["left", "down", "right"],
+            ATTR_HOLD_SECS: 1.5,
+            ATTR_NUM_REPEATS: 2,
+            ATTR_DELAY_SECS: 0,
+        },
+        blocking=True,
+    )
+
+    assert [c.args for c in mock_robot.drive.await_args_list] == [
+        (270, 2, 1.5),
+        (180, 2, 1.5),
+        (90, 2, 1.5),
+    ] * 2
+
+
+@pytest.mark.parametrize(
+    ("data", "translation_key"),
+    [
+        ({ATTR_COMMAND: ["up", "jump"]}, "unknown_command"),
+        ({ATTR_COMMAND: "up", ATTR_HOLD_SECS: 11}, "drive_too_long"),
+    ],
+)
+async def test_remote_invalid(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_robot: MagicMock,
+    data: dict[str, object],
+    translation_key: str,
+) -> None:
+    """An unknown command or a drive over the limit is refused before anything is sent."""
+    await _setup(hass, mock_config_entry, mock_robot, READY)
+
+    with pytest.raises(ServiceValidationError) as err:
+        await hass.services.async_call(
+            REMOTE_DOMAIN, SERVICE_SEND_COMMAND, {ATTR_ENTITY_ID: REMOTE, **data}, blocking=True
+        )
+    assert err.value.translation_key == translation_key
+    mock_robot.drive.assert_not_awaited()
+
+
+async def test_drive_defaults(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_robot: MagicMock,
+) -> None:
+    """The drive action uses the app's speed and one second when they're left out."""
+    await _setup(hass, mock_config_entry, mock_robot, READY)
+
+    await hass.services.async_call(
+        DOMAIN, WinbotService.DRIVE, {ATTR_ENTITY_ID: REMOTE, "angle": 90}, blocking=True
+    )
+
+    mock_robot.drive.assert_awaited_once_with(90, 2, 1.0)
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        {"angle": 361},
+        {"angle": -1},
+        {"angle": 90, "speed": 4},
+        {"angle": 90, "speed": 0},
+        {"angle": 90, "duration": 11},
+        {"speed": 2},
+    ],
+)
+async def test_drive_invalid(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_robot: MagicMock,
+    data: dict[str, object],
+) -> None:
+    """The drive action only takes angles 0 to 360, speeds 1 to 3 and up to 10 seconds."""
+    await _setup(hass, mock_config_entry, mock_robot, READY)
+
+    with pytest.raises(vol.Invalid):
+        await hass.services.async_call(
+            DOMAIN, WinbotService.DRIVE, {ATTR_ENTITY_ID: REMOTE, **data}, blocking=True
+        )
+    mock_robot.drive.assert_not_awaited()
