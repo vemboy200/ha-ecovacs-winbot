@@ -1,6 +1,6 @@
 """Self-stop test: send wheelMove like the app's joystick for a short burst, then stop sending and listen.
 
-Usage: python -I tools/winbot_drive.py [angle] [seconds]   (default 360 for 1 s, at most 2 s)
+Usage: python -I tools/winbot_drive.py [angle] [seconds] [speed]   (default 360 for 1 s at speed 2, at most 2 s)
 
 Sends {"angle": <angle>, "speed": 2, "act": "move"} every 100 ms for BURST_SECONDS, exactly as the app
 did while the joystick was held, then sends nothing and prints the robot's pushes for LISTEN_SECONDS.
@@ -65,6 +65,7 @@ def redact(text: str) -> str:
 async def main() -> None:
     angle = int(sys.argv[1]) if len(sys.argv) > 1 else 360
     burst = min(float(sys.argv[2]) if len(sys.argv) > 2 else BURST_SECONDS, MAX_BURST_SECONDS)
+    speed = int(sys.argv[3]) if len(sys.argv) > 3 else 2  # the app was only seen sending 2
     dev = await BleakScanner.find_device_by_filter(
         lambda d, a: (a.local_name or "").startswith("WINBOT"), timeout=20
     )
@@ -87,10 +88,10 @@ async def main() -> None:
 
     async with BleakClient(dev) as client:
         await client.start_notify(NOTIFY, on_notify)
-        print(f"connected; sending wheelMove angle={angle} for {burst}s")
+        print(f"connected; sending wheelMove angle={angle} speed={speed} for {burst}s")
         start = time.monotonic()
         while time.monotonic() - start < burst:
-            await client.write_gatt_char(WRITE, build("wheelMove", {"angle": angle, "speed": 2, "act": "move"}), response=False)
+            await client.write_gatt_char(WRITE, build("wheelMove", {"angle": angle, "speed": speed, "act": "move"}), response=False)
             await asyncio.sleep(INTERVAL)
         print(f"{time.monotonic() - start:6.2f}s stopped sending; listening {LISTEN_SECONDS}s. Do the wheels stop?")
         await asyncio.sleep(LISTEN_SECONDS)

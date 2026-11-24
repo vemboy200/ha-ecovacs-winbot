@@ -200,14 +200,15 @@ The ECOVACS HOME app needs a cloud account and an internet connection even to dr
 
 - The app sends `wheelMove {"angle": <n>, "speed": 2, "act": "move"}` about every 100 ms while the joystick is held, and the robot doesn't reply. Sending the same from a script works without the app.
 - The robot pushes `onCleanInfo` state `move`, router `control`, trigger `app` about 0.2 s after the first `wheelMove`.
-- **It stops by itself.** About 1.1 to 1.3 s after the last `wheelMove` it pushes state `idle` (router back to `auto`), in all 7 runs. So a dropped connection mid-move leaves it stopped within about a second, and no stop message is needed.
+- **It stops by itself.** About 1.1 to 1.3 s after the last `wheelMove` it pushes state `idle` (router back to `auto`), in all 14 runs (speeds 1 to 5, bursts of 0.5 to 2 s). So a dropped connection mid-move leaves it stopped within about a second, and no stop message is needed.
 - **`angle` is a direction on the window, in degrees:** 360 up, 180 down, 90 right, 270 left. The robot first turns to face that way, then drives. It may reverse instead of turning around: facing right, 270 made it back up to the left.
 - **`angle` isn't limited to four directions:** 45 made it turn toward the upper right and drive diagonally.
+- **`speed` is 1 to 3**, faster as it goes up (the app was seen sending 2). 4 and 5 were accepted but looked slower than 3, about the same as each other, so values above 3 seem to fall back to a slower speed. The robot never replies to `wheelMove`, so an out-of-range value gives no error.
 - Driving into the frame gives `onCollision {"direction": "br,"}` about once a second while it touches; it kept coming after the robot went idle. Here it was pushing into the right edge, so `br` isn't simply bottom right as first guessed.
 
 **Not known yet:**
 
-- What `speed` does: only 2 has been tried, and whether the app varies it with how far the joystick is pushed.
+- Whether the app varies `speed` with how far the joystick is pushed, and exactly what speed 4 and above fall back to.
 - Whether the app sends anything on release (no capture of that yet), and whether other `act` values exist.
 - What the `onCollision` codes mean, beyond "touching the frame".
 - How well a 100 ms stream works through an ESPHome Bluetooth proxy (the script talked to the robot directly from a Mac).
@@ -215,7 +216,7 @@ The ECOVACS HOME app needs a cloud account and an internet connection even to dr
 **Plan for Home Assistant** (smallest pieces first):
 
 1. A `remote` entity, like TV integrations use, with `up`, `down`, `left` and `right` commands (angles 360, 180, 270, 90) at a fixed speed. Since the robot stops by itself, a dropped connection is safe. `remote.send_command` already takes `hold_secs`, so the integration repeats `wheelMove` every 100 ms for that long, then stops. Enabled by default, with a copy-paste D-pad dashboard card in the README. Home Assistant's dashboard has no hold-to-drive control (a tap fires once, `hold_action` fires once with no release event), so from a dashboard each tap is a nudge, not the app's continuous joystick.
-2. Since the angle is analog (45 worked): an entity action like `ecovacs_winbot.drive` with validated `angle`, `speed` and `duration` fields, for scripts and custom cards. Not raw protocol through `vacuum.send_command`.
+2. Since the angle is analog (45 worked): an entity action like `ecovacs_winbot.drive` with validated `angle` (0 to 360), `speed` (1 to 3) and `duration` fields, for scripts and custom cards. Not raw protocol through `vacuum.send_command`.
 
 ## Not yet known
 
