@@ -229,7 +229,7 @@ The ECOVACS HOME app needs a cloud account and an internet connection even to dr
 
 **In Home Assistant** (both built; tested from the Mac script, not yet through Home Assistant):
 
-1. A `remote` entity, like TV integrations use, with `up`, `down`, `left` and `right` commands (angles 360, 180, 270, 90) at a fixed speed. Since the robot stops by itself, a dropped connection is safe. `remote.send_command` already takes `hold_secs`, so the integration repeats `wheelMove` every 100 ms for that long, then stops. Enabled by default, with a copy-paste D-pad dashboard card in the README. Home Assistant's dashboard has no hold-to-drive control (a tap fires once, `hold_action` fires once with no release event), so from a dashboard each tap is a nudge, not the app's continuous joystick.
+1. A `remote` entity, like TV integrations use, with `up`, `down`, `left` and `right` commands (angles 360, 180, 270, 90) and the diagonals `up_right`, `down_right`, `down_left`, `up_left` (45, 135, 225, 315) at a fixed speed. Since the robot stops by itself, a dropped connection is safe. `remote.send_command` already takes `hold_secs`, so the integration repeats `wheelMove` every 100 ms for that long, then stops. Enabled by default, with a copy-paste D-pad dashboard card in the README. Home Assistant's dashboard has no hold-to-drive control (a tap fires once, `hold_action` fires once with no release event), so from a dashboard each tap is a nudge, not the app's continuous joystick.
 2. Since the angle is analog (45 worked): an entity action like `ecovacs_winbot.drive` with validated `angle` (0 to 360), `speed` (1 to 3) and `duration` fields, for scripts and custom cards. Not raw protocol through `vacuum.send_command`.
 
 ## Not yet known

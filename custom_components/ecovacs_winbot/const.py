@@ -30,7 +30,17 @@ EVENT_BUMPED = "bumped"
 # Remote control. The remote entity's commands are directions on the window, in the angles
 # wheelMove takes (docs/protocol.md). The robot stops by itself about a second after the last
 # wheelMove, so a drive is capped rather than left running.
-REMOTE_COMMANDS = {"up": 360, "right": 90, "down": 180, "left": 270}
+# 45 was tested (it drove diagonally up and right); the other diagonals follow the same angles.
+REMOTE_COMMANDS = {
+    "up": 360,
+    "right": 90,
+    "down": 180,
+    "left": 270,
+    "up_right": 45,
+    "down_right": 135,
+    "down_left": 225,
+    "up_left": 315,
+}
 DEFAULT_SPEED = 2  # what the app sends
 MAX_DRIVE_SECONDS = 10
 

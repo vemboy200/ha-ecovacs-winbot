@@ -617,7 +617,7 @@ async def test_remote_send_command(
         SERVICE_SEND_COMMAND,
         {
             ATTR_ENTITY_ID: REMOTE,
-            ATTR_COMMAND: ["left", "down", "right"],
+            ATTR_COMMAND: ["left", "down", "right", "up_right", "down_left"],
             ATTR_HOLD_SECS: 1.5,
             ATTR_NUM_REPEATS: 2,
             ATTR_DELAY_SECS: 0,
@@ -629,6 +629,8 @@ async def test_remote_send_command(
         (270, 2, 1.5),
         (180, 2, 1.5),
         (90, 2, 1.5),
+        (45, 2, 1.5),
+        (225, 2, 1.5),
     ] * 2
 
 

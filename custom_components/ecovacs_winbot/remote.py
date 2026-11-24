@@ -39,7 +39,7 @@ async def async_setup_entry(
 
 
 class WinbotRemote(WinbotEntity, RemoteEntity):
-    """Drive the robot: up, down, left and right commands, and the drive action for any angle and speed.
+    """Drive the robot: up, down, left, right and diagonal commands, and the drive action for any angle and speed.
 
     On while the robot is on. There's no power command to turn it on or off with.
     """

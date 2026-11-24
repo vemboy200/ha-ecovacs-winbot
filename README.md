@@ -101,7 +101,7 @@ There are no options to configure afterwards.
 | Spray | Button | Spray once |
 | Automatic spraying | Switch | Let the robot spray on its own while cleaning |
 | Voice volume | Number | Volume of the robot's voice prompts, 0-63 (the app was seen sending 7, 14 and 21). The robot beeps at the new volume when it changes |
-| Remote control | Remote | Drive the robot across the window with the `up`, `down`, `left` and `right` commands, like the app's joystick (see [Remote control](#remote-control)). On while the robot is on; it has no power commands |
+| Remote control | Remote | Drive the robot across the window with the `up`, `down`, `left`, `right`, `up_left`, `up_right`, `down_left` and `down_right` commands, like the app's joystick (see [Remote control](#remote-control)). On while the robot is on; it has no power commands |
 | Let the app connect | Switch | While on, Home Assistant stays off the robot so the ECOVACS HOME app can connect (see below) |
 | Last trigger | Sensor (diagnostic, disabled by default) | What the robot says caused its last state change: Robot button, App or Home Assistant (the robot doesn't tell them apart), or Work complete. The same value is also the Status sensor's `last_trigger` attribute |
 | Error code | Sensor (diagnostic) | Raw error codes; `0` means no error |
@@ -128,7 +128,7 @@ Turning this switch on makes Home Assistant disconnect and stop connecting, so t
 
 ### Remote control
 
-The Remote control entity drives the robot without the app. Send `up`, `down`, `left` or `right` with `remote.send_command`; `hold_secs` is how long to keep driving (at most 10 seconds), and without it each command is a nudge of about a second. The robot first turns to face the direction, then drives, and it may back up instead of turning around. It stops by itself about a second after the last move message, also if the connection drops, and stops when it bumps into the frame.
+The Remote control entity drives the robot without the app. Send `up`, `down`, `left` or `right`, or a diagonal (`up_left`, `up_right`, `down_left`, `down_right`), with `remote.send_command`; `hold_secs` is how long to keep driving (at most 10 seconds), and without it each command is a nudge of about a second. The robot first turns to face the direction, then drives, and it may back up instead of turning around. It stops by itself about a second after the last move message, also if the connection drops, and stops when it bumps into the frame.
 
 For any direction and speed, use the **Drive** action below. Home Assistant's dashboard has no hold-to-drive control (a button fires once when tapped and once when held, with nothing on release), so from a dashboard each press is one drive of a fixed length, not the app's continuous joystick.
 
