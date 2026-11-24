@@ -49,7 +49,7 @@ class WinbotVolume(WinbotEntity, NumberEntity):
     @property
     def available(self) -> bool:
         """Needs the robot on and HA allowed to connect."""
-        return super().available and not self.coordinator.app_mode
+        return super().available and not self.coordinator.paused
 
     @property
     def native_value(self) -> float | None:

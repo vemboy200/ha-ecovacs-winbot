@@ -8,7 +8,7 @@ Usage: python -I tools/winbot_joystick.py
   X or Ctrl-C         quit
 
 Holding a key relies on the keyboard's auto-repeat, and the robot stops by itself about a second after
-the last command, so letting go stops it. Turn on "Let the app connect" in Home Assistant first: the
+the last command, so letting go stops it. Turn off "Bluetooth connection" in Home Assistant first: the
 robot accepts one connection at a time.
 """
 
@@ -79,7 +79,7 @@ async def main() -> None:
         lambda d, a: (a.local_name or "").startswith("WINBOT"), timeout=20
     )
     if dev is None:
-        say("WINBOT not found (off, or Home Assistant still connected? turn on Let the app connect)")
+        say("WINBOT not found (off, or Home Assistant still connected? turn off Bluetooth connection)")
         return
     start = time.monotonic()
     rx = bytearray()

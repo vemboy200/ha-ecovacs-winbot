@@ -29,7 +29,7 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: WinbotC
             "awake": coordinator.awake,
             "connected": bool(coordinator.client and coordinator.client.is_connected),
             "released": coordinator.released,
-            "app_mode": coordinator.app_mode,
+            "paused": coordinator.paused,
             "rssi": coordinator.rssi,
         },
         "robot_info": redact(robot_info),

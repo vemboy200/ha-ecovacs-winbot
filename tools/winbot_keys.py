@@ -4,7 +4,7 @@ Usage: python -I tools/winbot_keys.py
 
 Stays connected and prints every message the robot pushes. Press Enter to read the statistics: it prints
 key_count and which positions changed since the last read. Press a robot button a few times between reads.
-Type q and Enter to quit. Turn on "Let the app connect" in Home Assistant first.
+Type q and Enter to quit. Turn off "Bluetooth connection" in Home Assistant first.
 """
 
 import asyncio
@@ -54,7 +54,7 @@ async def main() -> None:
         lambda d, a: (a.local_name or "").startswith("WINBOT"), timeout=20
     )
     if dev is None:
-        print("WINBOT not found (off, or Home Assistant still connected? turn on Let the app connect)")
+        print("WINBOT not found (off, or Home Assistant still connected? turn off Bluetooth connection)")
         return
     start = time.monotonic()
     rx = bytearray()

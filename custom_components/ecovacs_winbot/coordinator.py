@@ -4,8 +4,8 @@ HA stays connected while the robot is on, so it gets every push (start,
 error, finished) the moment it happens, however the clean was started. After
 15 minutes with nothing happening HA lets go and stops checking, so the robot
 can switch itself off; it reconnects when the robot comes back on or a control
-is used. The robot accepts one Bluetooth connection at a time, so the "Let the app connect"
-switch makes HA let go for the ECOVACS HOME app. Whether the robot is on comes
+is used. The robot accepts one Bluetooth connection at a time, so turning the "Bluetooth connection"
+switch off makes HA let go for the ECOVACS HOME app or any other device. Whether the robot is on comes
 from its advertisements.
 """
 
@@ -74,7 +74,9 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
         super().__init__(hass, _LOGGER, config_entry=entry, name=DOMAIN, update_interval=None)
         self.address = address
         self.awake = bluetooth.async_address_present(hass, address, connectable=True)
-        self.app_mode = False  # True = HA lets go so the app can connect
+        self.paused = (
+            False  # True = Bluetooth connection switched off: HA lets go so another device can connect
+        )
         # True = idle long enough that HA let go so the robot can switch itself off.
         self.released = False
         # True after "off" was logged, so "back on" is logged once to match.
@@ -152,7 +154,7 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
         self._refresh_rssi()
         if not self.awake or self.data.is_active:  # the active poll covers cleaning
             return
-        if self.released or self.app_mode:
+        if self.released or self.paused:
             return
         if self.data.charging:
             # Stay connected while it charges. Letting go isn't needed: it switches
@@ -350,7 +352,7 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
 
     @callback
     def _schedule_check(self) -> None:
-        if self.app_mode or self.released:
+        if self.paused or self.released:
             return
         self.config_entry.async_create_background_task(
             self.hass, self._async_check(), f"{DOMAIN} check {self.address}", eager_start=True
@@ -435,8 +437,8 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
 
     async def async_run_command(self, method: str, *args: object, **kwargs: object) -> None:
         """Run a client command (connecting first if needed)."""
-        if self.app_mode:
-            raise WinbotError("HA is paused so the app can connect")
+        if self.paused:
+            raise WinbotError("the Bluetooth connection switch is off")
         self._mark_active()
         async with self._lock:
             client = self._get_client()
@@ -448,10 +450,10 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
         # The robot pushes onCleanInfo after clean commands; this covers a late push.
         self._handle_new_status(client.status)
 
-    async def async_set_app_mode(self, enabled: bool) -> None:
+    async def async_set_paused(self, paused: bool) -> None:
         """Pause (True) or resume (False) HA's use of the connection."""
-        self.app_mode = enabled
-        if enabled:
+        self.paused = paused
+        if paused:
             self._stop_active_poll()
             if self.client:
                 await self.client.disconnect()

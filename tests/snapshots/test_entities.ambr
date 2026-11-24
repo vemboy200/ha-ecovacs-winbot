@@ -1008,7 +1008,7 @@
     'state': 'on',
   })
 # ---
-# name: test_entities[switch][switch.winbot_0bc4_let_the_app_connect-entry]
+# name: test_entities[switch][switch.winbot_0bc4_bluetooth_connection-entry]
   EntityRegistryEntrySnapshot({
     'aliases': list([
       None,
@@ -1022,7 +1022,7 @@
     'disabled_by': None,
     'domain': 'switch',
     'entity_category': <EntityCategory.CONFIG: 'config'>,
-    'entity_id': 'switch.winbot_0bc4_let_the_app_connect',
+    'entity_id': 'switch.winbot_0bc4_bluetooth_connection',
     'has_entity_name': True,
     'hidden_by': None,
     'icon': None,
@@ -1030,32 +1030,32 @@
     'labels': set({
     }),
     'name': None,
-    'object_id_base': 'Let the app connect',
+    'object_id_base': 'Bluetooth connection',
     'options': dict({
     }),
     'original_device_class': None,
     'original_icon': None,
-    'original_name': 'Let the app connect',
+    'original_name': 'Bluetooth connection',
     'platform': 'ecovacs_winbot',
     'previous_unique_id': None,
     'suggested_object_id': None,
     'supported_features': 0,
-    'translation_key': 'app_mode',
-    'unique_id': 'AA:BB:CC:DD:0B:C4_app_mode',
+    'translation_key': 'connection',
+    'unique_id': 'AA:BB:CC:DD:0B:C4_connection',
     'unit_of_measurement': None,
   })
 # ---
-# name: test_entities[switch][switch.winbot_0bc4_let_the_app_connect-state]
+# name: test_entities[switch][switch.winbot_0bc4_bluetooth_connection-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Winbot 0BC4 Let the app connect',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Winbot 0BC4 Bluetooth connection',
     }),
     'context': <ANY>,
-    'entity_id': 'switch.winbot_0bc4_let_the_app_connect',
+    'entity_id': 'switch.winbot_0bc4_bluetooth_connection',
     'last_changed': <ANY>,
     'last_reported': <ANY>,
     'last_updated': <ANY>,
-    'state': 'off',
+    'state': 'on',
   })
 # ---
 # name: test_entities[vacuum][vacuum.winbot_0bc4-entry]

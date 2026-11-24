@@ -131,8 +131,8 @@
       "auto_spray": {
         "name": "Automatic spraying"
       },
-      "app_mode": {
-        "name": "Let the app connect"
+      "connection": {
+        "name": "Bluetooth connection"
       }
     }
   },

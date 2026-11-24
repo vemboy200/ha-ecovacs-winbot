@@ -28,7 +28,8 @@ DRIVE_SCHEMA = cv.make_entity_service_schema(
 )
 
 # Entity keys from earlier versions: buttons that moved into the vacuum entity,
-# and binary sensors that duplicated the battery and charging entities.
+# binary sensors that duplicated the battery and charging entities, and the
+# "Let the app connect" switch, replaced by the inverted "Bluetooth connection".
 RETIRED_KEYS = {
     "start",
     "start_border",
@@ -40,6 +41,7 @@ RETIRED_KEYS = {
     "return",
     "battery_low",
     "plugged_in",
+    "app_mode",
 }
 
 PLATFORMS: list[Platform] = [

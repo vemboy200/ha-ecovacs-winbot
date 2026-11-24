@@ -93,10 +93,10 @@
           "off": "mdi:spray-bottle"
         }
       },
-      "app_mode": {
-        "default": "mdi:cellphone-off",
+      "connection": {
+        "default": "mdi:bluetooth-connect",
         "state": {
-          "on": "mdi:cellphone-link"
+          "off": "mdi:bluetooth-off"
         }
       }
     }

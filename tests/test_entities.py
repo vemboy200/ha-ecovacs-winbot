@@ -76,7 +76,7 @@ STATUS = "sensor.winbot_0bc4_status"
 SIGNAL = "sensor.winbot_0bc4_signal_strength"
 OUT_OF_WATER = "binary_sensor.winbot_0bc4_out_of_water"
 AUTO_SPRAY = "switch.winbot_0bc4_automatic_spraying"
-APP_MODE = "switch.winbot_0bc4_let_the_app_connect"
+CONNECTION = "switch.winbot_0bc4_bluetooth_connection"
 VOLUME = "number.winbot_0bc4_voice_volume"
 SPRAY = "button.winbot_0bc4_spray"
 EVENT = "event.winbot_0bc4_cleaning"
@@ -263,25 +263,30 @@ async def test_commands_and_failures(
     assert err.value.translation_key == "command_failed"
 
 
-async def test_app_mode(
+async def test_connection_switch(
     hass: HomeAssistant,
     mock_config_entry: MockConfigEntry,
     mock_robot: MagicMock,
 ) -> None:
-    """Letting the app connect disconnects HA and disables the controls until it's turned off."""
+    """Turning the connection off disconnects HA and disables the controls until it's back on."""
     await _setup(hass, mock_config_entry, mock_robot, READY)
 
-    await hass.services.async_call(SWITCH_DOMAIN, SERVICE_TURN_ON, {ATTR_ENTITY_ID: APP_MODE}, blocking=True)
+    assert hass.states.get(CONNECTION).state == STATE_ON
+    await hass.services.async_call(
+        SWITCH_DOMAIN, SERVICE_TURN_OFF, {ATTR_ENTITY_ID: CONNECTION}, blocking=True
+    )
     mock_robot.disconnect.assert_awaited_once()
     mock_robot.is_connected = False
-    assert hass.states.get(APP_MODE).state == STATE_ON
+    assert hass.states.get(CONNECTION).state == STATE_OFF
     for entity_id in (VACUUM, AUTO_SPRAY, VOLUME, SPRAY, REMOTE):
         assert hass.states.get(entity_id).state == STATE_UNAVAILABLE
 
     get_info_calls = mock_robot.get_info.await_count
-    await hass.services.async_call(SWITCH_DOMAIN, SERVICE_TURN_OFF, {ATTR_ENTITY_ID: APP_MODE}, blocking=True)
+    await hass.services.async_call(
+        SWITCH_DOMAIN, SERVICE_TURN_ON, {ATTR_ENTITY_ID: CONNECTION}, blocking=True
+    )
     await hass.async_block_till_done()
-    assert hass.states.get(APP_MODE).state == STATE_OFF
+    assert hass.states.get(CONNECTION).state == STATE_ON
     assert hass.states.get(VACUUM).state == VacuumActivity.IDLE
     assert mock_robot.get_info.await_count == get_info_calls + 1
 
@@ -506,11 +511,11 @@ async def test_reconnects_after_drop(
 
 
 @pytest.mark.parametrize(
-    ("status", "app_mode", "interval"),
+    ("status", "paused", "interval"),
     [
         pytest.param(READY, False, IDLE_CHECK_INTERVAL, id="idle"),
         pytest.param(CLEANING, False, ACTIVE_POLL_INTERVAL, id="cleaning"),
-        pytest.param(READY, True, IDLE_CHECK_INTERVAL, id="app_mode"),
+        pytest.param(READY, True, IDLE_CHECK_INTERVAL, id="connection_off"),
     ],
 )
 async def test_signal_strength(
@@ -519,7 +524,7 @@ async def test_signal_strength(
     mock_config_entry: MockConfigEntry,
     mock_robot: MagicMock,
     status: WinbotStatus,
-    app_mode: bool,
+    paused: bool,
     interval: timedelta,
 ) -> None:
     """Signal strength is refreshed on a timer, whatever the robot is doing.
@@ -528,9 +533,9 @@ async def test_signal_strength(
     reading alone doesn't reach the advertisement callback.
     """
     await _setup(hass, mock_config_entry, mock_robot, status)
-    if app_mode:
+    if paused:
         await hass.services.async_call(
-            SWITCH_DOMAIN, SERVICE_TURN_ON, {ATTR_ENTITY_ID: APP_MODE}, blocking=True
+            SWITCH_DOMAIN, SERVICE_TURN_OFF, {ATTR_ENTITY_ID: CONNECTION}, blocking=True
         )
     assert hass.states.get(SIGNAL).state == STATE_UNAVAILABLE  # no advertisement seen yet
 
@@ -596,11 +601,15 @@ async def test_retired_entities_removed(
 ) -> None:
     """Entities from earlier versions are removed on setup."""
     mock_config_entry.add_to_hass(hass)
-    old = entity_registry.async_get_or_create(
-        Platform.BUTTON, "ecovacs_winbot", f"{ADDRESS}_start", config_entry=mock_config_entry
-    )
+    old = [
+        entity_registry.async_get_or_create(
+            platform, "ecovacs_winbot", f"{ADDRESS}_{key}", config_entry=mock_config_entry
+        )
+        for platform, key in ((Platform.BUTTON, "start"), (Platform.SWITCH, "app_mode"))
+    ]
     await _setup(hass, mock_config_entry, mock_robot, READY)
-    assert entity_registry.async_get(old.entity_id) is None
+    for entry in old:
+        assert entity_registry.async_get(entry.entity_id) is None
 
 
 async def test_remote_send_command(

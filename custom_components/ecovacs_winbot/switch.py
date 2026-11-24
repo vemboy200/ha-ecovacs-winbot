@@ -25,7 +25,7 @@ async def async_setup_entry(
 ) -> None:
     """Set up switches."""
     coordinator = entry.runtime_data
-    async_add_entities([WinbotAutoSpraySwitch(coordinator), WinbotAppModeSwitch(coordinator)])
+    async_add_entities([WinbotAutoSpraySwitch(coordinator), WinbotConnectionSwitch(coordinator)])
 
 
 class WinbotAutoSpraySwitch(WinbotEntity, SwitchEntity):
@@ -43,7 +43,7 @@ class WinbotAutoSpraySwitch(WinbotEntity, SwitchEntity):
     @property
     def available(self) -> bool:
         """Needs the robot on and HA allowed to connect."""
-        return super().available and not self.coordinator.app_mode
+        return super().available and not self.coordinator.paused
 
     @property
     def is_on(self) -> bool | None:
@@ -69,8 +69,12 @@ class WinbotAutoSpraySwitch(WinbotEntity, SwitchEntity):
         await self._set(False)
 
 
-class WinbotAppModeSwitch(WinbotEntity, SwitchEntity):
-    """When on, HA lets go of the robot so the ECOVACS HOME app can connect."""
+class WinbotConnectionSwitch(WinbotEntity, SwitchEntity):
+    """Whether HA uses the robot's Bluetooth connection.
+
+    The robot accepts one connection at a time, so turning this off makes HA disconnect and stay
+    off, for the ECOVACS HOME app or any other device. Back on, HA reconnects.
+    """
 
     available_when_off = True
 
@@ -79,19 +83,19 @@ class WinbotAppModeSwitch(WinbotEntity, SwitchEntity):
         super().__init__(
             coordinator,
             SwitchEntityDescription(
-                key="app_mode", translation_key="app_mode", entity_category=EntityCategory.CONFIG
+                key="connection", translation_key="connection", entity_category=EntityCategory.CONFIG
             ),
         )
 
     @property
     def is_on(self) -> bool:
         """Return the state."""
-        return self.coordinator.app_mode
+        return not self.coordinator.paused
 
     async def async_turn_on(self, **kwargs: Any) -> None:
-        """Let the app connect."""
-        await self.coordinator.async_set_app_mode(True)
+        """Connect again."""
+        await self.coordinator.async_set_paused(False)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
-        """Let HA connect again."""
-        await self.coordinator.async_set_app_mode(False)
+        """Disconnect and stay off the robot."""
+        await self.coordinator.async_set_paused(True)

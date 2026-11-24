@@ -49,7 +49,7 @@ class WinbotButton(WinbotEntity, ButtonEntity):
     @property
     def available(self) -> bool:
         """Buttons need the robot on and HA allowed to connect."""
-        return super().available and not self.coordinator.app_mode
+        return super().available and not self.coordinator.paused
 
     async def async_press(self) -> None:
         """Send the command."""

@@ -99,7 +99,7 @@ class WinbotVacuum(WinbotEntity, StateVacuumEntity):
     @property
     def available(self) -> bool:
         """Needs the robot on and HA allowed to connect."""
-        return super().available and not self.coordinator.app_mode
+        return super().available and not self.coordinator.paused
 
     @property
     def activity(self) -> VacuumActivity | None:

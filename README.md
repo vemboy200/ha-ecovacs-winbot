@@ -102,13 +102,13 @@ There are no options to configure afterwards.
 | Automatic spraying | Switch | Let the robot spray on its own while cleaning |
 | Voice volume | Number | Volume of the robot's voice prompts, 0-63 (the app was seen sending 7, 14 and 21). The robot beeps at the new volume when it changes |
 | Remote control | Remote | Drive the robot across the window with the `up`, `down`, `left`, `right`, `up_left`, `up_right`, `down_left` and `down_right` commands, like the app's joystick (see [Remote control](#remote-control)). On while the robot is on; it has no power commands |
-| Let the app connect | Switch | While on, Home Assistant stays off the robot so the ECOVACS HOME app can connect (see below) |
+| Bluetooth connection | Switch | Whether Home Assistant uses the robot's Bluetooth connection. Turn it off to make Home Assistant disconnect and stay off, so the ECOVACS HOME app or another device can connect (see below) |
 | Last trigger | Sensor (diagnostic, disabled by default) | What the robot says caused its last state change: Robot button, App or Home Assistant (the robot doesn't tell them apart), or Work complete. The same value is also the Status sensor's `last_trigger` attribute |
 | Error code | Sensor (diagnostic) | Raw error codes; `0` means no error |
 | Charge count, Out of water count, Fall count | Sensor (diagnostic) | Lifetime counters the robot keeps: how many times it was charged, ran out of water, and fell (the robot's `fall_count`, which has stayed at 0 so far). The robot reports more statistics (windows and area cleaned, button presses, battery temperature), but their layout isn't decoded yet; they're included in diagnostics |
 | Signal strength | Sensor (diagnostic) | Bluetooth signal of the robot's advertisements, as heard by the best adapter or proxy |
 
-While the robot is off, everything except Status, Cleaning, Let the app connect and Signal strength shows as unavailable.
+While the robot is off, everything except Status, Cleaning, Bluetooth connection and Signal strength shows as unavailable.
 
 ## How data is updated
 
@@ -117,14 +117,18 @@ While the robot is off, everything except Status, Cleaning, Let the app connect 
 - **Backup:** Home Assistant also asks for the full status (`getInfo`) every 60 seconds while cleaning and every 2 minutes while idle, and reconnects if the connection dropped.
 - **After 15 minutes idle**, Home Assistant lets go of the robot and stops checking, so the robot can switch itself off. Idle means no cleaning, no presses of the robot's buttons and no commands from Home Assistant; battery updates don't count. While it's charging Home Assistant stays connected, and the 15 minutes start when it's unplugged. The connection doesn't keep it on: once the battery is full, the robot switches itself off on the charger anyway (seen about 10 minutes after it was plugged in already full), and Home Assistant shows it as Off a few minutes later. It connects again when the robot is switched back on or when you use any of its controls in Home Assistant.
 - **Every new connection** starts by reading the full status.
-- **Signal strength** comes from the robot's advertisements, not the connection. It's refreshed every 60 seconds while cleaning and every 2 minutes otherwise, including while Home Assistant has let go or Let the app connect is on, and right away when it moves by 3 dBm or more in an advertisement Home Assistant passes on.
+- **Signal strength** comes from the robot's advertisements, not the connection. It's refreshed every 60 seconds while cleaning and every 2 minutes otherwise, including while Home Assistant has let go or Bluetooth connection is off, and right away when it moves by 3 dBm or more in an advertisement Home Assistant passes on.
 - **Lifetime counters** are read when Home Assistant connects, after a clean finishes and when charging starts, since they don't change otherwise.
 
-Because the robot accepts only one Bluetooth connection at a time, the ECOVACS HOME app can't connect while Home Assistant is connected. Use **Let the app connect** for that.
+Because the robot accepts only one Bluetooth connection at a time, the ECOVACS HOME app (or anything else) can't connect while Home Assistant is connected. Turn off **Bluetooth connection** for that.
 
-### Let the app connect
+### Bluetooth connection
 
-Turning this switch on makes Home Assistant disconnect and stop connecting, so the ECOVACS HOME app can use the robot. Status (on/off) and signal strength keep updating, because they only need advertisements. The other sensors keep their last values, the controls are unavailable, and no Cleaning events fire while it's on. Turn it off and Home Assistant reconnects and reads the full status. It resets to off when Home Assistant restarts.
+Turning this switch off makes Home Assistant disconnect and stop connecting, so another device, such as a phone with the ECOVACS HOME app, can use the robot. Status (on/off) and signal strength keep updating, because they only need advertisements. The other sensors keep their last values, the controls are unavailable, and no Cleaning events fire while it's off. Turn it back on and Home Assistant reconnects and reads the full status. It resets to on when Home Assistant restarts.
+
+While it's on, Home Assistant still lets go after 15 minutes idle (see above), so on means Home Assistant may connect, not that it's connected right now.
+
+This switch replaced **Let the app connect** (which worked the other way round: on meant Home Assistant stayed off). The old switch is removed on upgrade; update any automations or dashboards that used it.
 
 ### Remote control
 
@@ -374,7 +378,7 @@ script:
 
 ## Known limitations
 
-- **One connection at a time.** Home Assistant stays connected while the robot is on, so the ECOVACS HOME app can't connect. Turn on **Let the app connect** when you need the app.
+- **One connection at a time.** Home Assistant stays connected while the robot is on, so the ECOVACS HOME app can't connect. Turn off **Bluetooth connection** when you need the app.
 - **Short Bluetooth range.** Ecovacs quotes about 5 m for the app. Through a proxy, expect connection timeouts if the signal is around -90 dBm; move the robot or the proxy closer.
 - **A clean started from the robot's button after 15 minutes idle isn't seen** if the robot was left on. Home Assistant has let go by then and only reconnects when the robot is switched off and on again or a control is used.
 - **Events are only seen while connected.** If the connection drops (weak signal) and the robot finishes or errors before Home Assistant gets back in, the Done cleaning event fires on the next status check only if Home Assistant knew a clean was running, and an error that already cleared is missed.
@@ -392,7 +396,7 @@ script:
 
 **Entities are unavailable but Status isn't Off.** Home Assistant hears the robot but hasn't managed to read its status. Look for connection timeouts in the log (below); they usually mean weak signal.
 
-**The ECOVACS HOME app can't connect.** Home Assistant holds the connection while the robot is on. Turn on **Let the app connect**.
+**The ECOVACS HOME app can't connect.** Home Assistant holds the connection while the robot is on. Turn off **Bluetooth connection**.
 
 **Diagnostics.** Go to **Settings → Devices & services → Ecovacs Winbot**, open the menu (⋮) on the robot's entry and choose **Download diagnostics**. It has the connection state, the last status and every version the robot reports (firmware `SVER`, plus `BVER` and `VVER`, whose meaning isn't known yet), with the serial number, device id and Bluetooth address removed. Attach it when you open an issue.
 
