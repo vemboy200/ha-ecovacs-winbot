@@ -57,6 +57,15 @@
       },
       "error": {
         "default": "mdi:alert-circle-outline"
+      },
+      "charge_count": {
+        "default": "mdi:battery-sync"
+      },
+      "no_water_count": {
+        "default": "mdi:water-off"
+      },
+      "fall_count": {
+        "default": "mdi:arrow-down-bold-box"
       }
     },
     "switch": {

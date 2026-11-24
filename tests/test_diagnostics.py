@@ -52,5 +52,7 @@ async def test_diagnostics(
     }
     assert diagnostics["status"]["serial_number"] == "**REDACTED**"
     assert diagnostics["status"]["firmware"] == "2.6.0"
+    assert diagnostics["statistics"]["charge_count"] == 31
+    assert diagnostics["statistics"]["glass_count"] == [24, 0, 20, 0, 0]
     assert "SERIAL" not in str(diagnostics)
     assert "0B:C4" not in str(diagnostics)

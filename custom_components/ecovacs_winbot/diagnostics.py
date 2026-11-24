@@ -34,4 +34,6 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: WinbotC
         },
         "robot_info": redact(robot_info),
         "status": async_redact_data(redact(status), TO_REDACT),
+        # Raw getBuryData, including the arrays that aren't decoded yet.
+        "statistics": coordinator.stats.raw,
     }

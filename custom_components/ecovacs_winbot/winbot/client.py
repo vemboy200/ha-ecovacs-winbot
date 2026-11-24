@@ -16,7 +16,7 @@ from bleak_retry_connector import (
     establish_connection,
 )
 
-from .models import CleanMode, WinbotStatus, apply_info, apply_section
+from .models import CleanMode, WinbotStats, WinbotStatus, apply_info, apply_section, parse_stats
 from .protocol import Frame, FrameAssembler, FrameKind, encode_request, new_msg_id, redact
 
 _LOGGER = logging.getLogger(__name__)
@@ -179,6 +179,11 @@ class WinbotClient:
         reply = await self.request("getInfo", {"timestamp": int(time.time())})
         self.status = apply_info(self.status, reply.data)
         return self.status
+
+    async def get_stats(self) -> WinbotStats:
+        """Ask for the lifetime statistics."""
+        reply = await self.request("getBuryData", {})
+        return parse_stats(reply.data)
 
     # Commands, as captured from the ECOVACS HOME app (docs/protocol.md).
 

@@ -15,6 +15,7 @@ from pytest_homeassistant.components.bluetooth import (
 
 from custom_components.ecovacs_winbot.const import DOMAIN
 from custom_components.ecovacs_winbot.winbot import WinbotStatus
+from custom_components.ecovacs_winbot.winbot.models import parse_stats
 from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.const import CONF_ADDRESS
 
@@ -22,6 +23,21 @@ ADDRESS = "AA:BB:CC:DD:0B:C4"
 NAME = "WINBOT_TEST_0001"
 TITLE = "Winbot 0BC4"
 IDLE = WinbotStatus(state="idle")
+# A getBuryData reply from the W2 Pro Omni (2026-11-22 capture).
+BURY_DATA = {
+    "glass_count": [24, 0, 20, 0, 0],
+    "glass_scale": [2, 11, 2, 18, 0],
+    "glass_area": 1600,
+    "lowBattery": [0, 0, 0, 0, 0],
+    "fall_Time": 0,
+    "fall_count": 0,
+    "clean_sum": [15, 0, 93, 0, 0, 0, 0, 41, 67],
+    "key_count": [1, 11, 6, 0, 140, 0],
+    "no_water_count": 6,
+    "charge_count": 31,
+    "battery_temp": [293, 306],
+    "motor_die_count": 0,
+}
 
 
 def make_service_info(address: str, name: str, rssi: int = -60) -> BluetoothServiceInfoBleak:
@@ -130,4 +146,5 @@ def mock_robot(service_info: BluetoothServiceInfoBleak, mock_robot_class: MagicM
         client.is_connected = True
         client.get_info.return_value = IDLE
         client.status = IDLE
+        client.get_stats.return_value = parse_stats(BURY_DATA)
         yield client

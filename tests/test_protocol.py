@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from custom_components.ecovacs_winbot.winbot import WinbotStatus, redact
-from custom_components.ecovacs_winbot.winbot.models import apply_info
+from custom_components.ecovacs_winbot.winbot.models import apply_info, parse_stats
 
 
 def test_redact_hides_robot_identifiers() -> None:
@@ -40,3 +40,13 @@ def test_robot_info_kept_whole() -> None:
     assert status.firmware == "2.6.0"
     assert status.model_id == "b7oysg"
     assert status.robot_info == section
+
+
+def test_parse_stats() -> None:
+    """Only plain integer counters are read; everything is kept in raw."""
+    data = {"charge_count": 31, "no_water_count": True, "fall_count": [0], "glass_area": 1600}
+    stats = parse_stats(data)
+    assert stats.charge_count == 31
+    assert stats.no_water_count is None
+    assert stats.fall_count is None
+    assert stats.raw == data

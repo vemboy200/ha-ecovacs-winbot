@@ -17,7 +17,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .coordinator import WinbotConfigEntry, WinbotCoordinator
 from .entity import WinbotEntity
-from .winbot import Activity, WinbotStatus
+from .winbot import Activity, WinbotStats, WinbotStatus
 
 PARALLEL_UPDATES = 0
 
@@ -56,6 +56,38 @@ SENSORS: tuple[WinbotSensorDescription, ...] = (
 )
 
 
+@dataclass(frozen=True, kw_only=True)
+class WinbotStatsSensorDescription(SensorEntityDescription):
+    """Describe a lifetime statistics sensor."""
+
+    value_fn: Callable[[WinbotStats], int | None]
+
+
+STATS_SENSORS: tuple[WinbotStatsSensorDescription, ...] = (
+    WinbotStatsSensorDescription(
+        key="charge_count",
+        translation_key="charge_count",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        value_fn=lambda s: s.charge_count,
+    ),
+    WinbotStatsSensorDescription(
+        key="no_water_count",
+        translation_key="no_water_count",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        value_fn=lambda s: s.no_water_count,
+    ),
+    WinbotStatsSensorDescription(
+        key="fall_count",
+        translation_key="fall_count",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        value_fn=lambda s: s.fall_count,
+    ),
+)
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: WinbotConfigEntry,
@@ -68,6 +100,7 @@ async def async_setup_entry(
             WinbotStatusSensor(coordinator),
             WinbotSignalSensor(coordinator),
             *(WinbotSensor(coordinator, d) for d in SENSORS),
+            *(WinbotStatsSensor(coordinator, d) for d in STATS_SENSORS),
         ]
     )
 
@@ -81,6 +114,17 @@ class WinbotSensor(WinbotEntity, SensorEntity):
     def native_value(self) -> str | int | None:
         """Return the value."""
         return self.entity_description.value_fn(self.coordinator.data)
+
+
+class WinbotStatsSensor(WinbotEntity, SensorEntity):
+    """A lifetime counter from the robot's statistics."""
+
+    entity_description: WinbotStatsSensorDescription
+
+    @property
+    def native_value(self) -> int | None:
+        """Return the count."""
+        return self.entity_description.value_fn(self.coordinator.stats)
 
 
 class WinbotStatusSensor(WinbotEntity, SensorEntity):

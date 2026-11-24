@@ -84,6 +84,15 @@
       },
       "error": {
         "name": "Error code"
+      },
+      "charge_count": {
+        "name": "Charge count"
+      },
+      "no_water_count": {
+        "name": "Out of water count"
+      },
+      "fall_count": {
+        "name": "Fall count"
       }
     },
     "switch": {

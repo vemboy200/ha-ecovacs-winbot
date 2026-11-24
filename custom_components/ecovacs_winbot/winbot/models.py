@@ -146,3 +146,32 @@ def apply_info(status: WinbotStatus, data: dict[str, Any]) -> WinbotStatus:
         if isinstance(section, dict):
             status = apply_section(status, name, section)
     return status
+
+
+@dataclass(frozen=True, slots=True)
+class WinbotStats:
+    """Lifetime statistics from getBuryData.
+
+    Only the plain counters are named. Most other fields are arrays whose positions
+    aren't decoded yet (glass_count, clean_sum, key_count, ...), so they're kept in raw.
+    """
+
+    charge_count: int | None = None
+    no_water_count: int | None = None
+    fall_count: int | None = None
+    raw: dict[str, Any] = field(default_factory=dict)
+
+
+def parse_stats(data: dict[str, Any]) -> WinbotStats:
+    """Parse a getBuryData reply."""
+
+    def count(key: str) -> int | None:
+        value = data.get(key)
+        return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+    return WinbotStats(
+        charge_count=count("charge_count"),
+        no_water_count=count("no_water_count"),
+        fall_count=count("fall_count"),
+        raw=dict(data),
+    )

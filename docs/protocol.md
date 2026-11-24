@@ -67,7 +67,17 @@ Request data: `{"timestamp": <unix seconds>}`. Reply data contains:
 
 ### `getBuryData`
 
-Request data `{}`. Lifetime statistics: `glass_count`, `glass_scale`, `glass_area`, `clean_sum`, `charge_count`, `no_water_count`, `battery_temp`, `err_data`, and more.
+Request data `{}`. Lifetime statistics. Reply from 2026-11-22:
+
+```
+glass_count [24,0,20,0,0]      glass_scale [2,11,2,18,0]     glass_area 1600
+clean_sum [15,0,93,0,0,0,0,41,67]   key_count [1,11,6,0,140,0]   lowBattery [0,0,0,0,0]
+battery_temp [293,306]   finally_mode [0,0]   advise_cuccess 1388
+charge_count 31   no_water_count 6   fall_count 0   fall_Time 0   motor_die_count 0
+err_data: three arrays of 13 (one value, 1763942912, looks like a Unix timestamp)
+```
+
+The integration shows `charge_count`, `no_water_count` and `fall_count` as sensors, since their names say what they count. *Not known:* what each position in the arrays means, the unit of `glass_area`, whether `battery_temp` is in kelvin (293 and 306 would be 20 and 33 °C) or something else, and what `motor_die_count` counts. Diagnostics include the whole reply, to help decode these. `no_water_count` should go up by one each time the robot reports out of water, which can confirm it.
 
 ### `XLog`
 

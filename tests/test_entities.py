@@ -21,6 +21,7 @@ from syrupy.assertion import SnapshotAssertion
 from custom_components.ecovacs_winbot import PLATFORMS
 from custom_components.ecovacs_winbot.const import ACTIVE_POLL_INTERVAL, IDLE_CHECK_INTERVAL
 from custom_components.ecovacs_winbot.winbot import CleanMode, Frame, FrameKind, WinbotError, WinbotStatus
+from custom_components.ecovacs_winbot.winbot.models import parse_stats
 from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.components.button import DOMAIN as BUTTON_DOMAIN, SERVICE_PRESS
 from homeassistant.components.number import (
@@ -54,7 +55,7 @@ from homeassistant.core import HomeAssistant, State
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 
-from .conftest import ADDRESS, IDLE, NAME, make_service_info
+from .conftest import ADDRESS, BURY_DATA, IDLE, NAME, make_service_info
 
 VACUUM = "vacuum.winbot_0bc4"
 STATUS = "sensor.winbot_0bc4_status"
@@ -65,6 +66,7 @@ APP_MODE = "switch.winbot_0bc4_let_the_app_connect"
 VOLUME = "number.winbot_0bc4_voice_volume"
 SPRAY = "button.winbot_0bc4_spray"
 EVENT = "event.winbot_0bc4_cleaning"
+CHARGE_COUNT = "sensor.winbot_0bc4_charge_count"
 
 READY = replace(IDLE, battery_level=4, charging=False, attached=True, auto_spray=True, volume=35)
 CLEANING = replace(READY, state="clean", trigger="app", router="depth", motion_state="working")
@@ -407,6 +409,49 @@ async def test_signal_strength(
             async_fire_time_changed(hass)
             await hass.async_block_till_done()
         assert hass.states.get(SIGNAL).state == str(rssi)
+
+
+async def test_statistics(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    mock_config_entry: MockConfigEntry,
+    mock_robot: MagicMock,
+) -> None:
+    """Lifetime counters are read on connect and when charging starts, not on every check."""
+    await _setup(hass, mock_config_entry, mock_robot, READY)
+    assert mock_robot.get_stats.await_count == 1
+    assert hass.states.get(CHARGE_COUNT).state == "31"
+
+    freezer.tick(IDLE_CHECK_INTERVAL)
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert mock_robot.get_stats.await_count == 1
+
+    mock_robot.get_info.return_value = replace(READY, charging=True)
+    mock_robot.get_stats.return_value = parse_stats({**BURY_DATA, "charge_count": 32})
+    freezer.tick(IDLE_CHECK_INTERVAL)
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert mock_robot.get_stats.await_count == 2
+    assert hass.states.get(CHARGE_COUNT).state == "32"
+
+
+async def test_statistics_retried(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    mock_config_entry: MockConfigEntry,
+    mock_robot: MagicMock,
+) -> None:
+    """If reading the counters fails, they're read again on the next check."""
+    mock_robot.get_stats.side_effect = WinbotError("no answer to getBuryData")
+    await _setup(hass, mock_config_entry, mock_robot, READY)
+    assert hass.states.get(CHARGE_COUNT).state == STATE_UNKNOWN
+
+    mock_robot.get_stats.side_effect = None
+    freezer.tick(IDLE_CHECK_INTERVAL)
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert hass.states.get(CHARGE_COUNT).state == "31"
 
 
 async def test_retired_entities_removed(

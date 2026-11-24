@@ -35,7 +35,7 @@ from .const import (
     IDLE_CHECK_INTERVAL,
     IDLE_RELEASE_AFTER,
 )
-from .winbot import CleanMode, Frame, WinbotClient, WinbotError, WinbotStatus, redact
+from .winbot import CleanMode, Frame, WinbotClient, WinbotError, WinbotStats, WinbotStatus, redact
 from .winbot.products import model_id_from_name, model_name
 
 _LOGGER = logging.getLogger(__name__)
@@ -83,6 +83,10 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
         self._active_poll: CALLBACK_TYPE | None = None
         self._event_listeners: list[Callable[[str, dict[str, object] | None], None]] = []
         self.data = WinbotStatus()
+        self.stats = WinbotStats()
+        # Lifetime counters only change with a clean or a charge, so they're read on
+        # connect and after those, not on every status check.
+        self._stats_due = True
         self.rssi: int | None = None
         self.model_id = self._initial_model_id()
         self._device_info_written: tuple[str | None, ...] = (None, None, None)
@@ -218,6 +222,7 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
             else:
                 _LOGGER.debug("%s: robot is on", self.address)
             self._mark_active()
+            self._stats_due = True
             self._rssi_written = (self.rssi, time.monotonic())
             self.async_update_listeners()
             self._schedule_check()
@@ -321,6 +326,8 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
                 status.trigger,
                 status.state,
             )
+        if (status.finished and not old.finished) or (status.charging and old.charging is False):
+            self._stats_due = True
         if status.finished and not old.finished and old.state is not None:
             # A return also ends with workComplete. Its idle push already shows
             # the previous cleaning mode, so tell them apart by the old one.
@@ -353,6 +360,17 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
                 _LOGGER.debug("%s: status check failed: %s", self.address, err)
                 return
             self._handle_new_status(status)
+            if self._stats_due:
+                await self._async_read_stats(client)
+
+    async def _async_read_stats(self, client: WinbotClient) -> None:
+        try:
+            self.stats = await client.get_stats()
+        except WinbotError as err:
+            _LOGGER.debug("%s: reading statistics failed: %s", self.address, err)
+            return
+        self._stats_due = False
+        self.async_update_listeners()
 
     def _get_client(self) -> WinbotClient:
         if self.client is not None and self.client.is_connected:
