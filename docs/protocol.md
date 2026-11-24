@@ -77,7 +77,7 @@ charge_count 31   no_water_count 6   fall_count 0   fall_Time 0   motor_die_coun
 err_data: three arrays of 13 (one value, 1763942912, looks like a Unix timestamp)
 ```
 
-The integration shows `charge_count`, `no_water_count` and `fall_count` as sensors, since their names say what they count. *Not known:* what each position in the arrays means, the unit of `glass_area`, whether `battery_temp` is in kelvin (293 and 306 would be 20 and 33 °C) or something else, and what `motor_die_count` counts. Diagnostics include the whole reply, to help decode these.
+The integration shows `charge_count`, `no_water_count` and `fall_count` as sensors, since their names say what they count. *Not known:* what each position in the arrays means, the unit of `glass_area`, what the two `battery_temp` values are (kelvin, see below), and what `motor_die_count` counts. Diagnostics include the whole reply, to help decode these.
 
 Second reading, 2026-11-23 about 4:45 PM local (robot indoors, about 68 °F; 62 °F outside), compared with the first:
 
@@ -85,7 +85,7 @@ Second reading, 2026-11-23 about 4:45 PM local (robot indoors, about 68 °F; 62 
 |---|---|---|---|
 | `no_water_count` | 6 | 8 | Up by 2, and the robot reported out of water twice in between. **Confirmed** as the out-of-water count |
 | `charge_count` | 31 | 35 | Several plug-ins in between, consistent with a charge count |
-| `battery_temp` | [293, 306] | [293, 306] | Unchanged after cleans and a charge, so not a live temperature. *Reading:* lifetime min and max in kelvin (20 °C / 68 °F and 33 °C / 91 °F) |
+| `battery_temp` | [293, 306] | [293, 306] | **Kelvin**: 20 °C / 68 °F and 33 °C / 91 °F. Tenths of a degree Celsius would mean the battery never read below 84 °F, even after the robot sat outside at 62 °F. Unchanged after cleans, a charge and time outside, so not a live temperature. *Not known:* whether it's the lifetime low and high or values saved at some event; a reading after a clearly hotter or colder spell would tell |
 | `glass_count` | [24,0,20,0,0] | [34,0,29,0,0] | Positions 0 and 2 grew by 10 and 9 |
 | `glass_scale` | [2,11,2,18,0] | [2,11,2,29,0] | Position 3 grew by 11 |
 | `clean_sum` | [15,0,93,0,0,0,0,41,67] | [17,0,94,3,0,0,0,41,76] | Positions 0, 2, 3 and 8 grew |
