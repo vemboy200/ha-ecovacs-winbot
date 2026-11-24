@@ -77,7 +77,22 @@ charge_count 31   no_water_count 6   fall_count 0   fall_Time 0   motor_die_coun
 err_data: three arrays of 13 (one value, 1763942912, looks like a Unix timestamp)
 ```
 
-The integration shows `charge_count`, `no_water_count` and `fall_count` as sensors, since their names say what they count. *Not known:* what each position in the arrays means, the unit of `glass_area`, whether `battery_temp` is in kelvin (293 and 306 would be 20 and 33 °C) or something else, and what `motor_die_count` counts. Diagnostics include the whole reply, to help decode these. `no_water_count` should go up by one each time the robot reports out of water, which can confirm it.
+The integration shows `charge_count`, `no_water_count` and `fall_count` as sensors, since their names say what they count. *Not known:* what each position in the arrays means, the unit of `glass_area`, whether `battery_temp` is in kelvin (293 and 306 would be 20 and 33 °C) or something else, and what `motor_die_count` counts. Diagnostics include the whole reply, to help decode these.
+
+Second reading, 2026-11-23 about 4:45 PM local (robot indoors, about 68 °F; 62 °F outside), compared with the first:
+
+| Field | 2026-11-22 | 2026-11-23 | Reading |
+|---|---|---|---|
+| `no_water_count` | 6 | 8 | Up by 2, and the robot reported out of water twice in between. **Confirmed** as the out-of-water count |
+| `charge_count` | 31 | 35 | Several plug-ins in between, consistent with a charge count |
+| `battery_temp` | [293, 306] | [293, 306] | Unchanged after cleans and a charge, so not a live temperature. *Reading:* lifetime min and max in kelvin (20 °C / 68 °F and 33 °C / 91 °F) |
+| `glass_count` | [24,0,20,0,0] | [34,0,29,0,0] | Positions 0 and 2 grew by 10 and 9 |
+| `glass_scale` | [2,11,2,18,0] | [2,11,2,29,0] | Position 3 grew by 11 |
+| `clean_sum` | [15,0,93,0,0,0,0,41,67] | [17,0,94,3,0,0,0,41,76] | Positions 0, 2, 3 and 8 grew |
+| `key_count` | [1,11,6,0,140,0] | [1,11,10,0,150,0] | Positions 2 and 4 grew (button presses per button?) |
+| `finally_mode` | [0,0] | [0,3] | |
+| `advise_cuccess` | 1388 | 1452 | |
+| `err_data` | | | Three rows of 13. *Reading:* per error type, row 0 and 2 a count and row 1 the Unix time it last happened. Position 4: 2 times, last 2025-11-24 00:08 UTC. Position 2 is new: 2 times, last 2026-11-22 21:39 UTC (during the first tests) |
 
 ### `XLog`
 
