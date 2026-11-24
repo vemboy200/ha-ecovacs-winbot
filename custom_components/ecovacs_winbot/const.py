@@ -15,6 +15,9 @@ ACTIVE_POLL_INTERVAL = timedelta(seconds=60)
 # Seconds without an advertisement before HA considers the robot off.
 FALLBACK_AVAILABILITY_SECONDS = 120
 
+# What the robot reports as the cause of a state change (`trigger`). New ones are logged for reporting.
+TRIGGERS = ["button", "app", "workComplete"]
+
 EVENT_FINISHED = "finished"
 EVENT_RETURNED = "returned"
 EVENT_INTERRUPTED = "interrupted"

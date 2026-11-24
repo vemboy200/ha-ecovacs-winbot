@@ -95,6 +95,8 @@ rules:
   entity-disabled-by-default:
     status: done
     comment: >
+      Bumper (the same code for every edge, repeated while pressed) and Last trigger
+      (also the Status sensor's last_trigger attribute) are disabled by default.
       Signal strength is deliberately enabled: the robot moves between windows and
       Bluetooth range is the most common reason it can't be reached.
   entity-translations: done

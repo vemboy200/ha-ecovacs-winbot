@@ -71,6 +71,14 @@
       },
       "fall_count": {
         "default": "mdi:arrow-down-bold-box"
+      },
+      "last_trigger": {
+        "default": "mdi:gesture-tap",
+        "state": {
+          "button": "mdi:gesture-tap-button",
+          "app": "mdi:cellphone",
+          "workComplete": "mdi:check-circle"
+        }
       }
     },
     "switch": {

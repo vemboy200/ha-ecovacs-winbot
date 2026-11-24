@@ -112,6 +112,14 @@
       },
       "fall_count": {
         "name": "Fall count"
+      },
+      "last_trigger": {
+        "name": "Last trigger",
+        "state": {
+          "button": "Robot button",
+          "app": "App or Home Assistant",
+          "workComplete": "Work complete"
+        }
       }
     },
     "switch": {

@@ -37,6 +37,7 @@ from .const import (
     FALLBACK_AVAILABILITY_SECONDS,
     IDLE_CHECK_INTERVAL,
     IDLE_RELEASE_AFTER,
+    TRIGGERS,
 )
 from .winbot import CleanMode, Frame, WinbotClient, WinbotError, WinbotStats, WinbotStatus, redact
 from .winbot.products import model_id_from_name, model_name
@@ -46,7 +47,6 @@ _LOGGER = logging.getLogger(__name__)
 type WinbotConfigEntry = ConfigEntry[WinbotCoordinator]
 
 # Push messages seen so far (docs/protocol.md). Anything else gets logged as a warning.
-KNOWN_TRIGGERS = {"button", "app", "workComplete"}
 KNOWN_PUSHES = {"onBatteryInfo", "onCleanInfo", "onAdsorption", "onGlassType", "onSprayInfo", "onCollision"}
 
 
@@ -323,11 +323,7 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
             )
             if old.state is not None:  # not on the first status after setup, or every restart would fire it
                 self._fire(EVENT_ERROR, {"error_codes": list(status.error_codes)})
-        if (
-            status.trigger is not None
-            and status.trigger != old.trigger
-            and status.trigger not in KNOWN_TRIGGERS
-        ):
+        if status.trigger is not None and status.trigger != old.trigger and status.trigger not in TRIGGERS:
             _LOGGER.warning(
                 "Winbot reported a trigger this integration doesn't know yet, please report it: %s (state %s)",
                 status.trigger,

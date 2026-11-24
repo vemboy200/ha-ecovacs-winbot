@@ -102,6 +102,7 @@ There are no options to configure afterwards.
 | Automatic spraying | Switch | Let the robot spray on its own while cleaning |
 | Voice volume | Number | Volume of the robot's voice prompts, 0-63 (the app was seen sending 7, 14 and 21). The robot beeps at the new volume when it changes |
 | Let the app connect | Switch | While on, Home Assistant stays off the robot so the ECOVACS HOME app can connect (see below) |
+| Last trigger | Sensor (diagnostic, disabled by default) | What the robot says caused its last state change: Robot button, App or Home Assistant (the robot doesn't tell them apart), or Work complete. The same value is also the Status sensor's `last_trigger` attribute |
 | Error code | Sensor (diagnostic) | Raw error codes; `0` means no error |
 | Charge count, Out of water count, Fall count | Sensor (diagnostic) | Lifetime counters the robot keeps: how many times it was charged, ran out of water, and fell (the robot's `fall_count`, which has stayed at 0 so far). The robot reports more statistics (windows and area cleaned, button presses, battery temperature), but their layout isn't decoded yet; they're included in diagnostics |
 | Signal strength | Sensor (diagnostic) | Bluetooth signal of the robot's advertisements, as heard by the best adapter or proxy |

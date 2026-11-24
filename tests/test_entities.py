@@ -68,6 +68,7 @@ SPRAY = "button.winbot_0bc4_spray"
 EVENT = "event.winbot_0bc4_cleaning"
 CHARGE_COUNT = "sensor.winbot_0bc4_charge_count"
 BUMPER = "event.winbot_0bc4_bumper"
+LAST_TRIGGER = "sensor.winbot_0bc4_last_trigger"
 
 READY = replace(IDLE, battery_level=4, charging=False, attached=True, auto_spray=True, volume=35)
 CLEANING = replace(READY, state="clean", trigger="app", router="depth", motion_state="working")
@@ -413,16 +414,34 @@ async def test_out_of_water_event(
     assert hass.states.get(EVENT).state == event.state  # not again while still out of water
 
 
-async def test_bumper_disabled_by_default(
+@pytest.mark.parametrize("entity_id", [BUMPER, LAST_TRIGGER])
+async def test_disabled_by_default(
     hass: HomeAssistant,
     entity_registry: er.EntityRegistry,
     mock_config_entry: MockConfigEntry,
     mock_robot: MagicMock,
+    entity_id: str,
 ) -> None:
-    """The bumper event entity is disabled by default."""
+    """Entities that are rarely useful in automations are disabled by default."""
     await _setup(hass, mock_config_entry, mock_robot, READY)
-    assert entity_registry.async_get(BUMPER).disabled_by is er.RegistryEntryDisabler.INTEGRATION
-    assert hass.states.get(BUMPER) is None
+    assert entity_registry.async_get(entity_id).disabled_by is er.RegistryEntryDisabler.INTEGRATION
+    assert hass.states.get(entity_id) is None
+
+
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
+@pytest.mark.parametrize(
+    ("trigger", "state"), [("button", "button"), ("workComplete", "workComplete"), ("new", STATE_UNKNOWN)]
+)
+async def test_last_trigger(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_robot: MagicMock,
+    trigger: str,
+    state: str,
+) -> None:
+    """The last trigger sensor shows known triggers, and unknown for new ones (those are logged instead)."""
+    await _setup(hass, mock_config_entry, mock_robot, replace(READY, trigger=trigger))
+    assert hass.states.get(LAST_TRIGGER).state == state
 
 
 @pytest.mark.usefixtures("entity_registry_enabled_by_default")

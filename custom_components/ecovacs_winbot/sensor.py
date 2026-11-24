@@ -15,6 +15,7 @@ from homeassistant.const import PERCENTAGE, SIGNAL_STRENGTH_DECIBELS_MILLIWATT, 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
+from .const import TRIGGERS
 from .coordinator import WinbotConfigEntry, WinbotCoordinator
 from .entity import WinbotEntity
 from .winbot import Activity, WinbotStats, WinbotStatus
@@ -46,6 +47,15 @@ SENSORS: tuple[WinbotSensorDescription, ...] = (
         device_class=SensorDeviceClass.ENUM,
         options=CLEAN_MODES,
         value_fn=lambda s: s.router if s.router in CLEAN_MODES else None,
+    ),
+    WinbotSensorDescription(
+        key="last_trigger",
+        translation_key="last_trigger",
+        device_class=SensorDeviceClass.ENUM,
+        options=TRIGGERS,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=lambda s: s.trigger if s.trigger in TRIGGERS else None,
     ),
     WinbotSensorDescription(
         key="error",
