@@ -30,7 +30,9 @@ from .const import (
     EVENT_ERROR,
     EVENT_FINISHED,
     EVENT_INTERRUPTED,
+    EVENT_OUT_OF_WATER,
     EVENT_RETURNED,
+    EVENT_STARTED,
     FALLBACK_AVAILABILITY_SECONDS,
     IDLE_CHECK_INTERVAL,
     IDLE_RELEASE_AFTER,
@@ -329,6 +331,11 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
             )
         if (status.finished and not old.finished) or (status.charging and old.charging is False):
             self._stats_due = True
+        if status.state == "clean" and old.state not in ("clean", None):
+            # A new clean, from the robot's button or from the app or HA (both report "app").
+            self._fire(EVENT_STARTED, {"source": status.trigger})
+        if status.out_of_water and not old.out_of_water:
+            self._fire(EVENT_OUT_OF_WATER)
         if status.finished and not old.finished and old.state is not None:
             # A return also ends with workComplete. Its idle push already shows
             # the previous cleaning mode, so tell them apart by the old one.

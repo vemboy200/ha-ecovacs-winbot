@@ -209,10 +209,12 @@
     'area_id': None,
     'capabilities': dict({
       <EventEntityCapabilityAttribute.EVENT_TYPES: 'event_types'>: list([
+        'started',
         'finished',
         'returned',
         'interrupted',
         'error',
+        'out_of_water',
       ]),
     }),
     'config_entry_id': <ANY>,
@@ -250,10 +252,12 @@
     'attributes': ReadOnlyDict({
       <EventEntityStateAttribute.EVENT_TYPE: 'event_type'>: None,
       <EventEntityCapabilityAttribute.EVENT_TYPES: 'event_types'>: list([
+        'started',
         'finished',
         'returned',
         'interrupted',
         'error',
+        'out_of_water',
       ]),
       <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Winbot 0BC4 Cleaning',
     }),

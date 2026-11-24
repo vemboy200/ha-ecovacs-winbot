@@ -353,6 +353,64 @@ async def test_pushes(
     assert "SERIAL" not in caplog.text
 
 
+@pytest.mark.parametrize("source", ["button", "app"])
+async def test_started_event(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_robot: MagicMock,
+    mock_robot_class: MagicMock,
+    source: str,
+) -> None:
+    """The event entity fires when a clean starts, with where it was started from."""
+    await _setup(hass, mock_config_entry, mock_robot, READY)
+    on_status = mock_robot_class.call_args.kwargs["on_status"]
+
+    on_status(replace(CLEANING, trigger=source), Frame(FrameKind.PUSH, "onCleanInfo", None, {}, crc_ok=True))
+    await hass.async_block_till_done()
+    event = hass.states.get(EVENT)
+    assert event.attributes["event_type"] == "started"
+    assert event.attributes["source"] == source
+
+    # Resuming after a pause isn't a new start.
+    fired = event.state
+    on_status(PAUSED, Frame(FrameKind.PUSH, "onCleanInfo", None, {}, crc_ok=True))
+    on_status(CLEANING, Frame(FrameKind.PUSH, "onCleanInfo", None, {}, crc_ok=True))
+    await hass.async_block_till_done()
+    assert hass.states.get(EVENT).state == fired
+
+
+async def test_no_started_event_on_first_status(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_robot: MagicMock,
+) -> None:
+    """A clean already running when HA connects isn't reported as started."""
+    await _setup(hass, mock_config_entry, mock_robot, CLEANING)
+    assert hass.states.get(EVENT).state == STATE_UNKNOWN
+
+
+async def test_out_of_water_event(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_robot: MagicMock,
+    mock_robot_class: MagicMock,
+) -> None:
+    """The event entity fires once when the robot reports out of water."""
+    await _setup(hass, mock_config_entry, mock_robot, CLEANING)
+    on_status = mock_robot_class.call_args.kwargs["on_status"]
+    dry = replace(CLEANING, out_of_water=True)
+
+    on_status(dry, Frame(FrameKind.PUSH, "onSprayInfo", None, {}, crc_ok=True))
+    await hass.async_block_till_done()
+    event = hass.states.get(EVENT)
+    assert event.attributes["event_type"] == "out_of_water"
+    assert hass.states.get(OUT_OF_WATER).state == STATE_ON
+
+    on_status(dry, Frame(FrameKind.PUSH, "onSprayInfo", None, {}, crc_ok=True))
+    await hass.async_block_till_done()
+    assert hass.states.get(EVENT).state == event.state  # not again while still out of water
+
+
 async def test_reconnects_after_drop(
     hass: HomeAssistant,
     mock_config_entry: MockConfigEntry,

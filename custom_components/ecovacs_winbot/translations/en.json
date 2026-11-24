@@ -45,10 +45,19 @@
         "state_attributes": {
           "event_type": {
             "state": {
+              "started": "Started",
               "finished": "Done cleaning",
               "returned": "Done returning",
               "interrupted": "Interrupted",
-              "error": "Error"
+              "error": "Error",
+              "out_of_water": "Out of water"
+            }
+          },
+          "source": {
+            "name": "Started from",
+            "state": {
+              "button": "Robot button",
+              "app": "App or Home Assistant"
             }
           }
         }
