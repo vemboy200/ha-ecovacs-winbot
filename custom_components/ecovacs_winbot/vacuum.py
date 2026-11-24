@@ -4,6 +4,8 @@ It really is a vacuum: suction is what holds it on the glass.
 
 Cleaning modes are exposed as fan speeds (like Roborock does for its modes):
 pick one, then Start uses it; picking one mid-clean switches right away.
+
+The drive action (remote control, like the app's joystick) targets this entity.
 """
 
 from __future__ import annotations
@@ -152,6 +154,10 @@ class WinbotVacuum(WinbotEntity, StateVacuumEntity):
     async def async_clean_spot(self, **kwargs: Any) -> None:
         """Spot clean."""
         await self._start("Spot")
+
+    async def async_drive(self, angle: int, speed: int, duration: float) -> None:
+        """Drive toward angle at speed 1 to 3 for duration seconds (the drive action; its schema limits the values)."""
+        await self._run("drive", angle=angle, speed=speed, duration=duration)
 
     async def async_set_fan_speed(self, fan_speed: str, **kwargs: Any) -> None:
         """Pick the cleaning mode; switches immediately if already cleaning."""

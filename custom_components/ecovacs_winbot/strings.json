@@ -78,11 +78,6 @@
         "name": "Voice volume"
       }
     },
-    "remote": {
-      "remote": {
-        "name": "Remote control"
-      }
-    },
     "sensor": {
       "status": {
         "name": "Status",
@@ -142,12 +137,6 @@
     },
     "unknown_mode": {
       "message": "Unknown cleaning mode \"{mode}\". Pick one of: {modes}."
-    },
-    "unknown_command": {
-      "message": "Unknown remote command \"{command}\". Use one of: {commands}."
-    },
-    "drive_too_long": {
-      "message": "Drives are limited to {max} seconds at a time."
     }
   },
   "services": {

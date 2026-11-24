@@ -40,11 +40,6 @@
         "default": "mdi:volume-high"
       }
     },
-    "remote": {
-      "remote": {
-        "default": "mdi:gamepad-variant"
-      }
-    },
     "sensor": {
       "status": {
         "default": "mdi:robot-vacuum",

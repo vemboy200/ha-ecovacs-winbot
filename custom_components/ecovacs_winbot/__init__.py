@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import voluptuous as vol
 
-from homeassistant.components.remote import DOMAIN as REMOTE_DOMAIN
+from homeassistant.components.vacuum import DOMAIN as VACUUM_DOMAIN
 from homeassistant.const import CONF_ADDRESS, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv, entity_registry as er, service
@@ -49,7 +49,6 @@ PLATFORMS: list[Platform] = [
     Platform.BUTTON,
     Platform.EVENT,
     Platform.NUMBER,
-    Platform.REMOTE,
     Platform.SENSOR,
     Platform.SWITCH,
     Platform.VACUUM,
@@ -62,7 +61,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         hass,
         DOMAIN,
         WinbotService.DRIVE,
-        entity_domain=REMOTE_DOMAIN,
+        entity_domain=VACUUM_DOMAIN,
         schema=DRIVE_SCHEMA,
         func="async_drive",
     )

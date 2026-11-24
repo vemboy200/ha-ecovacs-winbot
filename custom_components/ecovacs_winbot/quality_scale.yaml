@@ -2,7 +2,7 @@ rules:
   # Bronze
   action-setup:
     status: done
-    comment: The drive action is registered in async_setup, for the remote entity.
+    comment: The drive action is registered in async_setup, for the vacuum entity.
   appropriate-polling:
     status: done
     comment: >
@@ -24,7 +24,7 @@ rules:
       library before a core submission, where bundling isn't allowed.
   docs-actions:
     status: done
-    comment: The README documents the drive action and the remote entity's commands.
+    comment: The README documents the drive action.
   docs-conditions:
     status: exempt
     comment: The integration does not provide any custom conditions.

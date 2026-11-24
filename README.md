@@ -101,7 +101,6 @@ There are no options to configure afterwards.
 | Spray | Button | Spray once |
 | Automatic spraying | Switch | Let the robot spray on its own while cleaning |
 | Voice volume | Number | Volume of the robot's voice prompts, 0-63 (the app was seen sending 7, 14 and 21). The robot beeps at the new volume when it changes |
-| Remote control | Remote | Drive the robot across the window with the `up`, `down`, `left`, `right`, `up_left`, `up_right`, `down_left` and `down_right` commands, like the app's joystick (see [Remote control](#remote-control)). On while the robot is on; it has no power commands |
 | Bluetooth connection | Switch | Whether Home Assistant uses the robot's Bluetooth connection. Turn it off to make Home Assistant disconnect and stay off, so the ECOVACS HOME app or another device can connect (see below) |
 | Last trigger | Sensor (diagnostic, disabled by default) | What the robot says caused its last state change: Robot button, App or Home Assistant (the robot doesn't tell them apart), or Work complete. The same value is also the Status sensor's `last_trigger` attribute |
 | Error code | Sensor (diagnostic) | Raw error codes; `0` means no error |
@@ -132,11 +131,11 @@ This switch replaced **Let the app connect** (which worked the other way round: 
 
 ### Remote control
 
-The Remote control entity drives the robot without the app. Send `up`, `down`, `left` or `right`, or a diagonal (`up_left`, `up_right`, `down_left`, `down_right`), with `remote.send_command`; `hold_secs` is how long to keep driving (at most 10 seconds), and without it each command is a nudge of about a second. The robot first turns to face the direction, then drives, and it may back up instead of turning around. It stops by itself about a second after the last move message, also if the connection drops, and stops when it bumps into the frame.
+The **Drive** action (below) drives the robot without the app, like the app's joystick. The robot first turns to face the direction, then drives, and it may back up instead of turning around. It stops by itself about a second after the last move message, also if the connection drops, and stops when it bumps into the frame.
 
-For any direction and speed, use the **Drive** action below. Home Assistant's dashboard has no hold-to-drive control (a button fires once when tapped and once when held, with nothing on release), so from a dashboard each press is one drive of a fixed length, not the app's continuous joystick.
+Home Assistant's dashboard has no hold-to-drive control (a button fires once when tapped and once when held, with nothing on release), so from a dashboard each press is one drive of a fixed length, not the app's continuous joystick.
 
-An 8-way D-pad for a dashboard, using the built-in grid and button cards, with the robot's status in the middle (tap an arrow for a nudge, hold it for 2 seconds of driving; replace the entity IDs with yours):
+An 8-way D-pad for a dashboard, using the built-in grid and button cards, with the robot's status in the middle (tap an arrow for a nudge of about a second, hold it for 2 seconds of driving; replace the entity IDs with yours):
 
 ```yaml
 type: grid
@@ -148,73 +147,77 @@ cards:
     show_name: false
     tap_action:
       action: perform-action
-      perform_action: remote.send_command
+      perform_action: ecovacs_winbot.drive
       target:
-        entity_id: remote.winbot_0bc4_remote_control
+        entity_id: vacuum.winbot_0bc4
       data:
-        command: up_left
+        angle: 315
+        duration: 0
     hold_action:
       action: perform-action
-      perform_action: remote.send_command
+      perform_action: ecovacs_winbot.drive
       target:
-        entity_id: remote.winbot_0bc4_remote_control
+        entity_id: vacuum.winbot_0bc4
       data:
-        command: up_left
-        hold_secs: 2
+        angle: 315
+        duration: 2
   - type: button
     icon: mdi:arrow-up
     show_name: false
     tap_action:
       action: perform-action
-      perform_action: remote.send_command
+      perform_action: ecovacs_winbot.drive
       target:
-        entity_id: remote.winbot_0bc4_remote_control
+        entity_id: vacuum.winbot_0bc4
       data:
-        command: up
+        angle: 360
+        duration: 0
     hold_action:
       action: perform-action
-      perform_action: remote.send_command
+      perform_action: ecovacs_winbot.drive
       target:
-        entity_id: remote.winbot_0bc4_remote_control
+        entity_id: vacuum.winbot_0bc4
       data:
-        command: up
-        hold_secs: 2
+        angle: 360
+        duration: 2
   - type: button
     icon: mdi:arrow-top-right
     show_name: false
     tap_action:
       action: perform-action
-      perform_action: remote.send_command
+      perform_action: ecovacs_winbot.drive
       target:
-        entity_id: remote.winbot_0bc4_remote_control
+        entity_id: vacuum.winbot_0bc4
       data:
-        command: up_right
+        angle: 45
+        duration: 0
     hold_action:
       action: perform-action
-      perform_action: remote.send_command
+      perform_action: ecovacs_winbot.drive
       target:
-        entity_id: remote.winbot_0bc4_remote_control
+        entity_id: vacuum.winbot_0bc4
       data:
-        command: up_right
-        hold_secs: 2
+        angle: 45
+        duration: 2
   - type: button
     icon: mdi:arrow-left
     show_name: false
     tap_action:
       action: perform-action
-      perform_action: remote.send_command
+      perform_action: ecovacs_winbot.drive
       target:
-        entity_id: remote.winbot_0bc4_remote_control
+        entity_id: vacuum.winbot_0bc4
       data:
-        command: left
+        angle: 270
+        duration: 0
     hold_action:
       action: perform-action
-      perform_action: remote.send_command
+      perform_action: ecovacs_winbot.drive
       target:
-        entity_id: remote.winbot_0bc4_remote_control
+        entity_id: vacuum.winbot_0bc4
       data:
-        command: left
-        hold_secs: 2
+        angle: 270
+        duration: 2
   - type: button
     entity: sensor.winbot_0bc4_status
     show_name: false
@@ -226,80 +229,84 @@ cards:
     show_name: false
     tap_action:
       action: perform-action
-      perform_action: remote.send_command
+      perform_action: ecovacs_winbot.drive
       target:
-        entity_id: remote.winbot_0bc4_remote_control
+        entity_id: vacuum.winbot_0bc4
       data:
-        command: right
+        angle: 90
+        duration: 0
     hold_action:
       action: perform-action
-      perform_action: remote.send_command
+      perform_action: ecovacs_winbot.drive
       target:
-        entity_id: remote.winbot_0bc4_remote_control
+        entity_id: vacuum.winbot_0bc4
       data:
-        command: right
-        hold_secs: 2
+        angle: 90
+        duration: 2
   - type: button
     icon: mdi:arrow-bottom-left
     show_name: false
     tap_action:
       action: perform-action
-      perform_action: remote.send_command
+      perform_action: ecovacs_winbot.drive
       target:
-        entity_id: remote.winbot_0bc4_remote_control
+        entity_id: vacuum.winbot_0bc4
       data:
-        command: down_left
+        angle: 225
+        duration: 0
     hold_action:
       action: perform-action
-      perform_action: remote.send_command
+      perform_action: ecovacs_winbot.drive
       target:
-        entity_id: remote.winbot_0bc4_remote_control
+        entity_id: vacuum.winbot_0bc4
       data:
-        command: down_left
-        hold_secs: 2
+        angle: 225
+        duration: 2
   - type: button
     icon: mdi:arrow-down
     show_name: false
     tap_action:
       action: perform-action
-      perform_action: remote.send_command
+      perform_action: ecovacs_winbot.drive
       target:
-        entity_id: remote.winbot_0bc4_remote_control
+        entity_id: vacuum.winbot_0bc4
       data:
-        command: down
+        angle: 180
+        duration: 0
     hold_action:
       action: perform-action
-      perform_action: remote.send_command
+      perform_action: ecovacs_winbot.drive
       target:
-        entity_id: remote.winbot_0bc4_remote_control
+        entity_id: vacuum.winbot_0bc4
       data:
-        command: down
-        hold_secs: 2
+        angle: 180
+        duration: 2
   - type: button
     icon: mdi:arrow-bottom-right
     show_name: false
     tap_action:
       action: perform-action
-      perform_action: remote.send_command
+      perform_action: ecovacs_winbot.drive
       target:
-        entity_id: remote.winbot_0bc4_remote_control
+        entity_id: vacuum.winbot_0bc4
       data:
-        command: down_right
+        angle: 135
+        duration: 0
     hold_action:
       action: perform-action
-      perform_action: remote.send_command
+      perform_action: ecovacs_winbot.drive
       target:
-        entity_id: remote.winbot_0bc4_remote_control
+        entity_id: vacuum.winbot_0bc4
       data:
-        command: down_right
-        hold_secs: 2
+        angle: 135
+        duration: 2
 ```
 
 ## Actions
 
 ### Drive (`ecovacs_winbot.drive`)
 
-Drives the robot toward any direction, for scripts and custom cards. Target the Remote control entity.
+Drives the robot toward any direction. Target the Winbot's vacuum entity.
 
 | Field | Required | Description |
 |---|---|---|
@@ -310,7 +317,7 @@ Drives the robot toward any direction, for scripts and custom cards. Target the 
 ```yaml
 action: ecovacs_winbot.drive
 target:
-  entity_id: remote.winbot_0bc4_remote_control
+  entity_id: vacuum.winbot_0bc4
 data:
   angle: 45
   speed: 3

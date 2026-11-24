@@ -2,7 +2,7 @@ drive:
   target:
     entity:
       integration: ecovacs_winbot
-      domain: remote
+      domain: vacuum
   fields:
     angle:
       required: true
