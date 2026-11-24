@@ -152,7 +152,7 @@ The app's `clean` / `return` request had a wrong CRC (0x6a instead of 0x60), and
 | `onAdsorption` | `adsorption` | Suction turned on at start |
 | `onGlassType` | `type`, `area` | Shortly after start |
 | `onSprayInfo` | `auto`, `water` | Mid-clean; `water: 0` = **out of water** (the robot's voice said so at the same moment). Never sent with water present: nothing after a refill, a clean start, a manual spray, or a finished clean with a full tank. `water` can't be polled either: `getSprayInfo` (alone or in `getInfo`) only returns `auto` |
-| `onCollision` | `direction` | Seen once, `{"direction": "br,"}`, right after a clean finished and just before suction turned off, as the robot was taken off the glass. *Reading:* `br` = bottom right, and the trailing comma suggests a list of sides |
+| `onCollision` | `direction` | Seen once, `{"direction": "br,"}`, right after a clean finished and just before suction turned off, as the robot was taken off the glass. The trailing comma suggests a list. `br` also came about once a second while the robot was driven into the right edge of the frame during the remote-control test (see [Remote control](#remote-control)), so it isn't simply "bottom right" |
 
 ## Clean state values seen
 
@@ -196,29 +196,26 @@ The robot was plugged in already full (battery LEDs steady, which on this robot 
 
 The ECOVACS HOME app needs a cloud account and an internet connection even to drive the robot over Bluetooth, so local remote control in Home Assistant would replace the app's joystick entirely. Not built yet.
 
-**Known** (one capture, 2026-11-22):
+**Known** (app capture 2026-11-22, and `tools/winbot_drive.py` on the window 2026-11-23, robot attached to the glass):
 
-- The app sends `wheelMove {"angle": <n>, "speed": 2, "act": "move"}` about every 100 ms while the joystick is held, and the robot doesn't reply.
-- While driving, `onCleanInfo` reports state `move` with router `control`.
-- Only `angle` 360 and 180 and `speed` 2 have been seen.
+- The app sends `wheelMove {"angle": <n>, "speed": 2, "act": "move"}` about every 100 ms while the joystick is held, and the robot doesn't reply. Sending the same from a script works without the app.
+- The robot pushes `onCleanInfo` state `move`, router `control`, trigger `app` about 0.2 s after the first `wheelMove`.
+- **It stops by itself.** About 1.1 to 1.3 s after the last `wheelMove` it pushes state `idle` (router back to `auto`), in all 7 runs. So a dropped connection mid-move leaves it stopped within about a second, and no stop message is needed.
+- **`angle` is a direction on the window, in degrees:** 360 up, 180 down, 90 right, 270 left. The robot first turns to face that way, then drives. It may reverse instead of turning around: facing right, 270 made it back up to the left.
+- **`angle` isn't limited to four directions:** 45 made it turn toward the upper right and drive diagonally.
+- Driving into the frame gives `onCollision {"direction": "br,"}` about once a second while it touches; it kept coming after the robot went idle. Here it was pushing into the right edge, so `br` isn't simply bottom right as first guessed.
 
 **Not known yet:**
 
-- Which way 360 and 180 point, and whether `angle` takes any value from 0 to 360 or only a few directions. The joystick looks analog, but the app may round it.
-- Whether `speed` follows how far the joystick is pushed or is a few fixed levels.
-- What the app sends on release, and whether there's a stop `act` or a rotate command.
-- What the robot does when `wheelMove` messages stop: whether it stops by itself (as the 100 ms repeat suggests, but that's a guess) or keeps driving until told to stop. This decides whether a dropped Bluetooth link mid-move is safe.
-- How well a 100 ms stream works through an ESPHome Bluetooth proxy.
-
-**Next tests** (both make the robot move on the window):
-
-1. A PacketLogger capture driving each direction and a few diagonals, pushing the joystick only slightly and then fully, releasing, and trying any rotate controls.
-2. Sending one short `wheelMove` burst from a script and watching whether the robot stops when it ends.
+- What `speed` does: only 2 has been tried, and whether the app varies it with how far the joystick is pushed.
+- Whether the app sends anything on release (no capture of that yet), and whether other `act` values exist.
+- What the `onCollision` codes mean, beyond "touching the frame".
+- How well a 100 ms stream works through an ESPHome Bluetooth proxy (the script talked to the robot directly from a Mac).
 
 **Plan for Home Assistant** (smallest pieces first):
 
-1. A `remote` entity, like TV integrations use, with `forward`, `back`, `left` and `right` commands at a fixed speed. `remote.send_command` already takes `hold_secs`, so the integration repeats `wheelMove` every 100 ms for that long, then stops. Enabled by default, with a copy-paste D-pad dashboard card in the README. Home Assistant's dashboard has no hold-to-drive control (a tap fires once, `hold_action` fires once with no release event), so from a dashboard each tap is a nudge, not the app's continuous joystick.
-2. Only if angle or speed turn out to be truly variable: an entity action like `ecovacs_winbot.drive` with validated `angle`, `speed` and `duration` fields, for scripts and custom cards. Not raw protocol through `vacuum.send_command`.
+1. A `remote` entity, like TV integrations use, with `up`, `down`, `left` and `right` commands (angles 360, 180, 270, 90) at a fixed speed. Since the robot stops by itself, a dropped connection is safe. `remote.send_command` already takes `hold_secs`, so the integration repeats `wheelMove` every 100 ms for that long, then stops. Enabled by default, with a copy-paste D-pad dashboard card in the README. Home Assistant's dashboard has no hold-to-drive control (a tap fires once, `hold_action` fires once with no release event), so from a dashboard each tap is a nudge, not the app's continuous joystick.
+2. Since the angle is analog (45 worked): an entity action like `ecovacs_winbot.drive` with validated `angle`, `speed` and `duration` fields, for scripts and custom cards. Not raw protocol through `vacuum.send_command`.
 
 ## Not yet known
 
