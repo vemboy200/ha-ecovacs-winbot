@@ -24,6 +24,8 @@ PARALLEL_UPDATES = 0
 
 STATE_OFF = "off"
 CLEAN_MODES = ["depth", "auto", "border", "spot", "return", "control"]
+# The robot's trigger values, as state keys (which have to be lowercase).
+TRIGGER_STATES = {trigger: trigger.replace("workComplete", "work_complete") for trigger in TRIGGERS}
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -52,10 +54,10 @@ SENSORS: tuple[WinbotSensorDescription, ...] = (
         key="last_trigger",
         translation_key="last_trigger",
         device_class=SensorDeviceClass.ENUM,
-        options=TRIGGERS,
+        options=list(TRIGGER_STATES.values()),
         entity_category=EntityCategory.DIAGNOSTIC,
         entity_registry_enabled_default=False,
-        value_fn=lambda s: s.trigger if s.trigger in TRIGGERS else None,
+        value_fn=lambda s: TRIGGER_STATES.get(s.trigger) if s.trigger else None,
     ),
     WinbotSensorDescription(
         key="error",

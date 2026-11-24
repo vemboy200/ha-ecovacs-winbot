@@ -675,7 +675,7 @@
       <SensorEntityCapabilityAttribute.OPTIONS: 'options'>: list([
         'button',
         'app',
-        'workComplete',
+        'work_complete',
       ]),
     }),
     'config_entry_id': <ANY>,
@@ -716,7 +716,7 @@
       <SensorEntityCapabilityAttribute.OPTIONS: 'options'>: list([
         'button',
         'app',
-        'workComplete',
+        'work_complete',
       ]),
     }),
     'context': <ANY>,

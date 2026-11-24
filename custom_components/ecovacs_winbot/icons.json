@@ -77,7 +77,7 @@
         "state": {
           "button": "mdi:gesture-tap-button",
           "app": "mdi:cellphone",
-          "workComplete": "mdi:check-circle"
+          "work_complete": "mdi:check-circle"
         }
       }
     },

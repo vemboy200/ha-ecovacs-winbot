@@ -118,7 +118,7 @@
         "state": {
           "button": "Robot button",
           "app": "App or Home Assistant",
-          "workComplete": "Work complete"
+          "work_complete": "Work complete"
         }
       }
     },

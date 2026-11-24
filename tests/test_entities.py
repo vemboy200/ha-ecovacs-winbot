@@ -430,7 +430,7 @@ async def test_disabled_by_default(
 
 @pytest.mark.usefixtures("entity_registry_enabled_by_default")
 @pytest.mark.parametrize(
-    ("trigger", "state"), [("button", "button"), ("workComplete", "workComplete"), ("new", STATE_UNKNOWN)]
+    ("trigger", "state"), [("button", "button"), ("workComplete", "work_complete"), ("new", STATE_UNKNOWN)]
 )
 async def test_last_trigger(
     hass: HomeAssistant,
