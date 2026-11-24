@@ -89,10 +89,23 @@ Second reading, 2026-11-23 about 4:45 PM local (robot indoors, about 68 °F; 62 
 | `glass_count` | [24,0,20,0,0] | [34,0,29,0,0] | Positions 0 and 2 grew by 10 and 9 |
 | `glass_scale` | [2,11,2,18,0] | [2,11,2,29,0] | Position 3 grew by 11 |
 | `clean_sum` | [15,0,93,0,0,0,0,41,67] | [17,0,94,3,0,0,0,41,76] | Positions 0, 2, 3 and 8 grew |
-| `key_count` | [1,11,6,0,140,0] | [1,11,10,0,150,0] | Positions 2 and 4 grew (button presses per button?) |
+| `key_count` | [1,11,6,0,140,0] | [1,11,10,0,150,0] | Button presses, mapped below |
 | `finally_mode` | [0,0] | [0,3] | |
 | `advise_cuccess` | 1388 | 1452 | |
 | `err_data` | | | Three rows of 13. *Reading:* per error type, row 0 and 2 a count and row 1 the Unix time it last happened. Position 4: 2 times, last 2025-11-24 00:08 UTC. Position 2 is new: 2 times, last 2026-11-22 21:39 UTC (during the first tests) |
+
+**`key_count` mapped** (2026-11-23, pressing each button and reading again with `tools/winbot_keys.py`):
+
+| Position | Button | Live message when pressed |
+|---|---|---|
+| 0 | not one of the W2 Pro Omni's four buttons (value 1) | |
+| 1 | Power (+2 for off and on) | None; the robot just stops or starts advertising |
+| 2 | Cleaning mode (+1 per press) | `onCleanInfo` with the new `router` |
+| 3 | not one of the four (value 0) | |
+| 4 | Cable reel (+1 per press) | **None**: the counter is the only trace |
+| 5 | not one of the four (value 0) | |
+
+The start/pause button (it starts a clean, which begins with suction) isn't counted anywhere in `key_count`; it shows up live as `onCleanInfo` state `clean` / `idle` with trigger `button`. Positions 0, 3 and 5 may be buttons on other models or on the station.
 
 ### `XLog`
 
