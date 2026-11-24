@@ -132,32 +132,34 @@ The Remote control entity drives the robot without the app. Send `up`, `down`, `
 
 For any direction and speed, use the **Drive** action below. Home Assistant's dashboard has no hold-to-drive control (a button fires once when tapped and once when held, with nothing on release), so from a dashboard each press is one drive of a fixed length, not the app's continuous joystick.
 
-A D-pad for a dashboard (tap for a nudge, hold for 2 seconds of driving; replace the entity ID with yours):
+An 8-way D-pad for a dashboard, using the built-in grid and button cards, with the robot's status in the middle (tap an arrow for a nudge, hold it for 2 seconds of driving; replace the entity IDs with yours):
 
 ```yaml
-type: horizontal-stack
+type: grid
+columns: 3
+square: true
 cards:
   - type: button
-    icon: mdi:arrow-left-bold
-    name: Left
+    icon: mdi:arrow-top-left
+    show_name: false
     tap_action:
       action: perform-action
       perform_action: remote.send_command
       target:
         entity_id: remote.winbot_0bc4_remote_control
       data:
-        command: left
+        command: up_left
     hold_action:
       action: perform-action
       perform_action: remote.send_command
       target:
         entity_id: remote.winbot_0bc4_remote_control
       data:
-        command: left
+        command: up_left
         hold_secs: 2
   - type: button
-    icon: mdi:arrow-up-bold
-    name: Up
+    icon: mdi:arrow-up
+    show_name: false
     tap_action:
       action: perform-action
       perform_action: remote.send_command
@@ -174,8 +176,86 @@ cards:
         command: up
         hold_secs: 2
   - type: button
-    icon: mdi:arrow-down-bold
-    name: Down
+    icon: mdi:arrow-top-right
+    show_name: false
+    tap_action:
+      action: perform-action
+      perform_action: remote.send_command
+      target:
+        entity_id: remote.winbot_0bc4_remote_control
+      data:
+        command: up_right
+    hold_action:
+      action: perform-action
+      perform_action: remote.send_command
+      target:
+        entity_id: remote.winbot_0bc4_remote_control
+      data:
+        command: up_right
+        hold_secs: 2
+  - type: button
+    icon: mdi:arrow-left
+    show_name: false
+    tap_action:
+      action: perform-action
+      perform_action: remote.send_command
+      target:
+        entity_id: remote.winbot_0bc4_remote_control
+      data:
+        command: left
+    hold_action:
+      action: perform-action
+      perform_action: remote.send_command
+      target:
+        entity_id: remote.winbot_0bc4_remote_control
+      data:
+        command: left
+        hold_secs: 2
+  - type: button
+    entity: sensor.winbot_0bc4_status
+    show_name: false
+    show_state: true
+    tap_action:
+      action: more-info
+  - type: button
+    icon: mdi:arrow-right
+    show_name: false
+    tap_action:
+      action: perform-action
+      perform_action: remote.send_command
+      target:
+        entity_id: remote.winbot_0bc4_remote_control
+      data:
+        command: right
+    hold_action:
+      action: perform-action
+      perform_action: remote.send_command
+      target:
+        entity_id: remote.winbot_0bc4_remote_control
+      data:
+        command: right
+        hold_secs: 2
+  - type: button
+    icon: mdi:arrow-bottom-left
+    show_name: false
+    tap_action:
+      action: perform-action
+      perform_action: remote.send_command
+      target:
+        entity_id: remote.winbot_0bc4_remote_control
+      data:
+        command: down_left
+    hold_action:
+      action: perform-action
+      perform_action: remote.send_command
+      target:
+        entity_id: remote.winbot_0bc4_remote_control
+      data:
+        command: down_left
+        hold_secs: 2
+  - type: button
+    icon: mdi:arrow-down
+    show_name: false
     tap_action:
       action: perform-action
       perform_action: remote.send_command
@@ -192,22 +272,22 @@ cards:
         command: down
         hold_secs: 2
   - type: button
-    icon: mdi:arrow-right-bold
-    name: Right
+    icon: mdi:arrow-bottom-right
+    show_name: false
     tap_action:
       action: perform-action
       perform_action: remote.send_command
       target:
         entity_id: remote.winbot_0bc4_remote_control
       data:
-        command: right
+        command: down_right
     hold_action:
       action: perform-action
       perform_action: remote.send_command
       target:
         entity_id: remote.winbot_0bc4_remote_control
       data:
-        command: right
+        command: down_right
         hold_secs: 2
 ```
 
