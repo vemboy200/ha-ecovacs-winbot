@@ -648,3 +648,79 @@ async def test_drive_invalid(
             DOMAIN, WinbotService.DRIVE, {ATTR_ENTITY_ID: VACUUM, **data}, blocking=True
         )
     mock_robot.drive.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    ("domain", "service", "data", "method"),
+    [
+        (VACUUM_DOMAIN, SERVICE_START, {}, "start"),
+        (VACUUM_DOMAIN, SERVICE_PAUSE, {}, "pause"),
+        (VACUUM_DOMAIN, SERVICE_STOP, {}, "stop"),
+        (VACUUM_DOMAIN, SERVICE_RETURN_TO_BASE, {}, "return_home"),
+        (VACUUM_DOMAIN, SERVICE_CLEAN_SPOT, {}, "start"),
+        (DOMAIN, WinbotService.DRIVE, {"angle": 90}, "drive"),
+    ],
+)
+async def test_needs_glass(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_robot: MagicMock,
+    domain: str,
+    service: str,
+    data: dict[str, object],
+    method: str,
+) -> None:
+    """Vacuum commands and driving are refused while the robot isn't attached to the glass."""
+    await _setup(hass, mock_config_entry, mock_robot, replace(READY, attached=False))
+
+    with pytest.raises(ServiceValidationError) as err:
+        await hass.services.async_call(domain, service, {ATTR_ENTITY_ID: VACUUM, **data}, blocking=True)
+    assert err.value.translation_key == "not_on_glass"
+    getattr(mock_robot, method).assert_not_awaited()
+
+
+async def test_needs_glass_unknown(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_robot: MagicMock,
+) -> None:
+    """While attachment is unknown, nothing is refused."""
+    await _setup(hass, mock_config_entry, mock_robot, replace(READY, attached=None))
+
+    await hass.services.async_call(VACUUM_DOMAIN, SERVICE_START, {ATTR_ENTITY_ID: VACUUM}, blocking=True)
+    mock_robot.start.assert_awaited_once()
+    assert hass.states.get(SPRAY).state != STATE_UNAVAILABLE
+
+
+async def test_mode_off_the_glass(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_robot: MagicMock,
+) -> None:
+    """The cleaning mode can be picked while the robot isn't on the glass."""
+    await _setup(hass, mock_config_entry, mock_robot, replace(READY, attached=False))
+
+    await hass.services.async_call(
+        VACUUM_DOMAIN, SERVICE_SET_FAN_SPEED, {ATTR_ENTITY_ID: VACUUM, ATTR_FAN_SPEED: "Edge"}, blocking=True
+    )
+    assert hass.states.get(VACUUM).attributes[ATTR_FAN_SPEED] == "Edge"
+
+
+async def test_spray_follows_glass(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_robot: MagicMock,
+    mock_robot_class: MagicMock,
+) -> None:
+    """The Spray button is unavailable off the glass and comes back when suction turns on."""
+    await _setup(hass, mock_config_entry, mock_robot, replace(READY, attached=False))
+    assert hass.states.get(SPRAY).state == STATE_UNAVAILABLE
+    assert hass.states.get(VACUUM).state == VacuumActivity.IDLE  # it still shows status
+
+    on_status = mock_robot_class.call_args.kwargs["on_status"]
+    on_status(
+        replace(READY, attached=True),
+        Frame(FrameKind.PUSH, "onAdsorption", None, {}, crc_ok=True),
+    )
+    await hass.async_block_till_done()
+    assert hass.states.get(SPRAY).state != STATE_UNAVAILABLE

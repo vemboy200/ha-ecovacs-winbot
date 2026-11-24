@@ -137,6 +137,9 @@
     },
     "unknown_mode": {
       "message": "Unknown cleaning mode \"{mode}\". Pick one of: {modes}."
+    },
+    "not_on_glass": {
+      "message": "The Winbot isn't attached to the glass."
     }
   },
   "services": {

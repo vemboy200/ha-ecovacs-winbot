@@ -24,10 +24,12 @@ class WinbotButtonDescription(ButtonEntityDescription):
 
     method: str
     kwargs: dict[str, Any] = field(default_factory=dict)
+    # Only possible while the robot is attached to the glass; unavailable otherwise, as the app hides it.
+    needs_glass: bool = False
 
 
 BUTTONS: tuple[WinbotButtonDescription, ...] = (
-    WinbotButtonDescription(key="spray", translation_key="spray", method="spray_once"),
+    WinbotButtonDescription(key="spray", translation_key="spray", method="spray_once", needs_glass=True),
 )
 
 
@@ -48,14 +50,20 @@ class WinbotButton(WinbotEntity, ButtonEntity):
 
     @property
     def available(self) -> bool:
-        """Buttons need the robot on and HA allowed to connect."""
-        return super().available and not self.coordinator.paused
+        """Buttons need the robot on, HA allowed to connect, and some the robot on the glass."""
+        return (
+            super().available
+            and not self.coordinator.paused
+            and not (self.entity_description.needs_glass and self.coordinator.data.attached is False)
+        )
 
     async def async_press(self) -> None:
         """Send the command."""
         try:
             await self.coordinator.async_run_command(
-                self.entity_description.method, **self.entity_description.kwargs
+                self.entity_description.method,
+                needs_glass=self.entity_description.needs_glass,
+                **self.entity_description.kwargs,
             )
         except WinbotError as err:
             raise HomeAssistantError(

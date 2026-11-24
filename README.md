@@ -89,16 +89,16 @@ There are no options to configure afterwards.
 
 | Entity | Type | Description |
 |---|---|---|
-| Winbot (vacuum) | Vacuum | Start (resumes if paused), pause, stop, return, spot clean. **Fan speed** is the cleaning mode: Deep, Edge, Spot, 5 minutes, 10 minutes. Picking a mode sets what Start uses, or switches immediately mid-clean |
+| Winbot (vacuum) | Vacuum | Start (resumes if paused), pause, stop, return, spot clean. **Fan speed** is the cleaning mode: Deep, Edge, Spot, 5 minutes, 10 minutes. Picking a mode sets what Start uses, or switches immediately mid-clean. Like the app, the commands only work while the robot is attached to the glass (otherwise they give an error); picking a mode works any time |
 | Status | Sensor | Off, Idle, Cleaning, Paused, Returning, Remote control. "Off" means the robot isn't advertising (switched off or out of range) |
 | Battery | Sensor | Battery level. The robot reports 5 steps, so this moves in 20% steps |
 | Cleaning mode | Sensor | Mode the robot reports: Deep, Auto, Edge, Spot, Return, Remote control |
 | Cleaning | Event | Fires **Started** (`started`) when a clean starts, with `source` `button` (the robot's own button) or `app` (the ECOVACS HOME app or Home Assistant; the robot doesn't tell them apart), **Done cleaning** (`finished`) when a clean completes on its own, **Done returning** (`returned`) when a return completes, **Interrupted** when the robot goes off mid-clean, **Error** when it reports an error (it stops when that happens; the codes are in the event's `error_codes` attribute), **Out of water** (`out_of_water`) when the robot reports its tank ran dry (once per clean; the Out of water binary sensor shows the same thing as a state) |
 | Bumper | Event (disabled by default) | Fires **Bumped** when the robot reports hitting something, with the robot's `code` (always `br,` so far). It doesn't say which edge or bumper: every edge, a corner and both bumpers gave the same code. It repeats about once a second while the robot presses against the frame |
 | Charging | Binary sensor | Whether the battery is charging |
-| Attached to glass | Binary sensor | Whether suction is on |
+| Attached to glass | Binary sensor | Whether suction is on, which is when the robot is on the window. The vacuum commands, driving and Spray need it |
 | Out of water | Binary sensor | On when the robot reports an empty tank. The robot only says so in a message during a clean (the full status doesn't include it), so the last value is kept, also across Home Assistant restarts, until the robot reports again. Unknown until the first report. The robot doesn't report a refilled tank (nothing after a refill, a start or a spray), so the sensor turns off when a new clean starts and back on if the robot reports the tank empty again |
-| Spray | Button | Spray once |
+| Spray | Button | Spray once. Unavailable while the robot isn't attached to the glass |
 | Automatic spraying | Switch | Let the robot spray on its own while cleaning |
 | Voice volume | Number | Volume of the robot's voice prompts, 0-63 (the app was seen sending 7, 14 and 21). The robot beeps at the new volume when it changes |
 | Bluetooth connection | Switch | Whether Home Assistant uses the robot's Bluetooth connection. Turn it off to make Home Assistant disconnect and stay off, so the ECOVACS HOME app or another device can connect (see below) |
@@ -306,7 +306,7 @@ cards:
 
 ### Drive (`ecovacs_winbot.drive`)
 
-Drives the robot toward any direction. Target the Winbot's vacuum entity.
+Drives the robot toward any direction. Target the Winbot's vacuum entity. Only works while the robot is attached to the glass.
 
 | Field | Required | Description |
 |---|---|---|

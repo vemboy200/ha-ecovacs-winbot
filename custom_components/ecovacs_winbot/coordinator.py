@@ -20,6 +20,7 @@ from typing import TypedDict
 from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -435,8 +436,14 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
 
     # Used by entities
 
-    async def async_run_command(self, method: str, *args: object, **kwargs: object) -> None:
-        """Run a client command (connecting first if needed)."""
+    async def async_run_command(
+        self, method: str, *args: object, needs_glass: bool = False, **kwargs: object
+    ) -> None:
+        """Run a client command (connecting first if needed).
+
+        needs_glass: refuse while the robot reports it isn't attached to the glass (suction
+        off), like the app, which hides those controls then. Unknown attachment isn't refused.
+        """
         if self.paused:
             raise WinbotError("the Bluetooth connection switch is off")
         self._mark_active()
@@ -446,6 +453,8 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
                 # Fresh connection: get the full status first, so the UI is
                 # current right away and pause/stop use the real cleaning mode.
                 self._handle_new_status(await client.get_info())
+            if needs_glass and self.data.attached is False:
+                raise ServiceValidationError(translation_domain=DOMAIN, translation_key="not_on_glass")
             await getattr(client, method)(*args, **kwargs)
         # The robot pushes onCleanInfo after clean commands; this covers a late push.
         self._handle_new_status(client.status)

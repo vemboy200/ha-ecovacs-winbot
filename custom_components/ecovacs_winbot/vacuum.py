@@ -120,7 +120,9 @@ class WinbotVacuum(WinbotEntity, StateVacuumEntity):
 
     async def _run(self, method: str, **kwargs: Any) -> None:
         try:
-            await self.coordinator.async_run_command(method, **kwargs)
+            # Every vacuum command needs the robot on the glass. Picking a mode while
+            # idle doesn't send anything, so it works any time.
+            await self.coordinator.async_run_command(method, needs_glass=True, **kwargs)
         except WinbotError as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
