@@ -171,6 +171,12 @@ Pause shows as state `clean` with motionState `pause`. A stop from the app or bu
 
 A `getInfo` poll every 10 s saw every change within one interval.
 
+## Switching off on the charger (2026-11-23)
+
+The robot was plugged in already full (battery LEDs steady, which on this robot means full; blinking means charging), with Home Assistant connected through a Bluetooth proxy. About 10 minutes later the robot switched itself off: the LEDs went dark, Home Assistant's connection dropped, reconnect attempts got no answer, and it stopped advertising. So the robot powers off by itself once it's full, and an open connection doesn't keep it on.
+
+`isCharging` stayed 1 the whole time, so it follows the plug rather than whether the battery is still charging, and the robot can't be asked whether it's full. One test so far; how long it waits after reaching full from a lower charge isn't known.
+
 ## Remote control
 
 The ECOVACS HOME app needs a cloud account and an internet connection even to drive the robot over Bluetooth, so local remote control in Home Assistant would replace the app's joystick entirely. Not built yet.

@@ -152,8 +152,9 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
         if self.released or self.app_mode:
             return
         if self.data.charging:
-            # It stays on while charging anyway, so letting go gains nothing;
-            # the idle clock starts when it's unplugged.
+            # Stay connected while it charges. Letting go isn't needed: it switches
+            # itself off once full even while connected (docs/protocol.md). The idle
+            # clock starts when it's unplugged.
             self._mark_active()
         elif time.monotonic() - self._last_activity >= IDLE_RELEASE_AFTER.total_seconds():
             self._release()
