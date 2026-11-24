@@ -113,6 +113,7 @@ While the robot is off, everything except Status, Cleaning, Let the app connect 
 - **Backup:** Home Assistant also asks for the full status (`getInfo`) every 60 seconds while cleaning and every 2 minutes while idle, and reconnects if the connection dropped.
 - **After 15 minutes idle**, Home Assistant lets go of the robot and stops checking, so the robot can switch itself off. Idle means no cleaning, no presses of the robot's buttons and no commands from Home Assistant; battery updates don't count. While it's charging Home Assistant stays connected, and the 15 minutes start when it's unplugged. It connects again when the robot is switched back on or when you use any of its controls in Home Assistant.
 - **Every new connection** starts by reading the full status.
+- **Signal strength** comes from the robot's advertisements, not the connection. It's refreshed every 60 seconds while cleaning and every 2 minutes otherwise, including while Home Assistant has let go or Let the app connect is on, and right away when it moves by 3 dBm or more in an advertisement Home Assistant passes on.
 
 Because the robot accepts only one Bluetooth connection at a time, the ECOVACS HOME app can't connect while Home Assistant is connected. Use **Let the app connect** for that.
 

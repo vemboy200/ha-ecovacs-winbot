@@ -127,11 +127,24 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
             self._schedule_check()
 
     @callback
+    def _refresh_rssi(self) -> None:
+        """Show the signal of the latest advertisement.
+
+        Needed on a timer: HA doesn't call _async_on_advertisement when only the signal changed.
+        """
+        if not self.awake:
+            return
+        info = bluetooth.async_last_service_info(self.hass, self.address, connectable=True)
+        if info and info.rssi != self.rssi:
+            self.rssi = info.rssi
+            self._rssi_written = (self.rssi, time.monotonic())
+            self.async_update_listeners()
+
+    @callback
     def _async_idle_tick(self, _now: object) -> None:
+        self._refresh_rssi()
         if not self.awake or self.data.is_active:  # the active poll covers cleaning
             return
-        if info := bluetooth.async_last_service_info(self.hass, self.address, connectable=True):
-            self.rssi = info.rssi
         if self.released or self.app_mode:
             return
         if self.data.charging:
@@ -366,6 +379,7 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
 
     @callback
     def _async_active_poll_tick(self, _now: object) -> None:
+        self._refresh_rssi()
         self._schedule_check()
 
     @callback

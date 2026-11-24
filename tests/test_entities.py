@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from datetime import timedelta
 import logging
 from unittest.mock import MagicMock, patch
 
@@ -368,28 +369,44 @@ async def test_reconnects_after_drop(
     assert hass.states.get(VACUUM).state == VacuumActivity.CLEANING
 
 
+@pytest.mark.parametrize(
+    ("status", "app_mode", "interval"),
+    [
+        pytest.param(READY, False, IDLE_CHECK_INTERVAL, id="idle"),
+        pytest.param(CLEANING, False, ACTIVE_POLL_INTERVAL, id="cleaning"),
+        pytest.param(READY, True, IDLE_CHECK_INTERVAL, id="app_mode"),
+    ],
+)
 async def test_signal_strength(
     hass: HomeAssistant,
     freezer: FrozenDateTimeFactory,
     mock_config_entry: MockConfigEntry,
     mock_robot: MagicMock,
+    status: WinbotStatus,
+    app_mode: bool,
+    interval: timedelta,
 ) -> None:
-    """Signal strength is refreshed by the idle check.
+    """Signal strength is refreshed on a timer, whatever the robot is doing.
 
-    The robot's advertisement content doesn't change while it sits idle, so a
-    new reading alone doesn't reach the advertisement callback.
+    The robot's advertisement content doesn't change while it's on, so a new
+    reading alone doesn't reach the advertisement callback.
     """
-    await _setup(hass, mock_config_entry, mock_robot, READY)
+    await _setup(hass, mock_config_entry, mock_robot, status)
+    if app_mode:
+        await hass.services.async_call(
+            SWITCH_DOMAIN, SERVICE_TURN_ON, {ATTR_ENTITY_ID: APP_MODE}, blocking=True
+        )
     assert hass.states.get(SIGNAL).state == STATE_UNAVAILABLE  # no advertisement seen yet
 
-    with patch(
-        "custom_components.ecovacs_winbot.coordinator.bluetooth.async_last_service_info",
-        return_value=make_service_info(ADDRESS, NAME, rssi=-70),
-    ):
-        freezer.tick(IDLE_CHECK_INTERVAL)
-        async_fire_time_changed(hass)
-        await hass.async_block_till_done()
-    assert hass.states.get(SIGNAL).state == "-70"
+    for rssi in (-70, -75):
+        with patch(
+            "custom_components.ecovacs_winbot.coordinator.bluetooth.async_last_service_info",
+            return_value=make_service_info(ADDRESS, NAME, rssi=rssi),
+        ):
+            freezer.tick(interval)
+            async_fire_time_changed(hass)
+            await hass.async_block_till_done()
+        assert hass.states.get(SIGNAL).state == str(rssi)
 
 
 async def test_retired_entities_removed(
