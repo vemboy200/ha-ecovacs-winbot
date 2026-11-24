@@ -25,6 +25,9 @@ NOTIFY_UUID = "0000fff1-0000-1000-8000-00805f9b34fb"
 WRITE_UUID = "0000fff2-0000-1000-8000-00805f9b34fb"
 REQUEST_TIMEOUT = 8.0
 WRITE_CHUNK = 180  # stays under any negotiated MTU we've seen
+# The app repeats wheelMove about every 100 ms while its joystick is held. The robot stops
+# by itself about 1.1 to 1.3 s after the last one (docs/protocol.md).
+DRIVE_INTERVAL = 0.1
 
 
 class WinbotError(Exception):
@@ -135,14 +138,7 @@ class WinbotClient:
                 if self._on_status:
                     self._on_status(self.status, frame)
 
-    async def request(self, command: str, data: dict[str, Any], *, answer_push: str | None = None) -> Frame:
-        """Send a request and wait for its reply. Connects first if needed.
-
-        answer_push: the robot answers this command with that push instead of a reply
-        (clean -> onCleanInfo, in every capture).
-        """
-        await self.connect()
-        assert self._client is not None
+    def _encode(self, command: str, data: dict[str, Any]) -> tuple[str, bytes]:
         msg_id = new_msg_id()
         frame_bytes = encode_request(command, data, msg_id)
         while frame_bytes[-2] == 0x0A:
@@ -150,16 +146,37 @@ class WinbotClient:
             # (tested: 3 of 3 dropped). A new message id changes the CRC.
             msg_id = new_msg_id()
             frame_bytes = encode_request(command, data, msg_id)
+        return msg_id, frame_bytes
+
+    async def _write(self, command: str, data: dict[str, Any], frame_bytes: bytes) -> None:
+        assert self._client is not None
+        _LOGGER.debug("%s: -> %s %s (%d bytes)", self._ble_device.address, command, data, len(frame_bytes))
+        for i in range(0, len(frame_bytes), WRITE_CHUNK):
+            await self._client.write_gatt_char(WRITE_UUID, frame_bytes[i : i + WRITE_CHUNK], response=False)
+
+    async def send(self, command: str, data: dict[str, Any]) -> None:
+        """Send a message the robot doesn't answer (wheelMove). Connects first if needed."""
+        await self.connect()
+        _msg_id, frame_bytes = self._encode(command, data)
+        try:
+            await self._write(command, data, frame_bytes)
+        except BleakError as err:
+            raise WinbotConnectionError(str(err)) from err
+
+    async def request(self, command: str, data: dict[str, Any], *, answer_push: str | None = None) -> Frame:
+        """Send a request and wait for its reply. Connects first if needed.
+
+        answer_push: the robot answers this command with that push instead of a reply
+        (clean -> onCleanInfo, in every capture).
+        """
+        await self.connect()
+        msg_id, frame_bytes = self._encode(command, data)
         fut: asyncio.Future[Frame] = asyncio.get_running_loop().create_future()
         waiters = self._push_waiters if answer_push else self._pending
         key = answer_push or msg_id
         waiters[key] = fut
-        _LOGGER.debug("%s: -> %s %s (%d bytes)", self._ble_device.address, command, data, len(frame_bytes))
         try:
-            for i in range(0, len(frame_bytes), WRITE_CHUNK):
-                await self._client.write_gatt_char(
-                    WRITE_UUID, frame_bytes[i : i + WRITE_CHUNK], response=False
-                )
+            await self._write(command, data, frame_bytes)
             _LOGGER.debug("%s: %s written", self._ble_device.address, command)
             async with asyncio.timeout(REQUEST_TIMEOUT):
                 reply = await fut
@@ -248,3 +265,30 @@ class WinbotClient:
         """Turn automatic spraying on or off."""
         reply = await self.request("setSprayInfo", {"auto": int(enabled)})
         self.status = apply_section(self.status, "setSprayInfo", reply.data or {"auto": int(enabled)})
+
+    # Remote control (docs/protocol.md, "Remote control").
+
+    async def move(self, angle: int, speed: int = 2) -> None:
+        """Send one wheelMove: the robot turns toward angle and drives, then stops by itself about a second later.
+
+        angle is a direction on the window in degrees: 360 up, 90 right, 180 down, 270 left, and
+        anything in between (45 drove diagonally up and right). speed is 1 (slow) to 3 (fast); the
+        app sends 2. The robot doesn't answer wheelMove, so a bad value gives no error.
+        """
+        # The app sends 360 for up; 0 was never tried, so send 360 for it.
+        angle = angle % 360 or 360
+        await self.send("wheelMove", {"angle": angle, "speed": speed, "act": "move"})
+
+    async def drive(self, angle: int, speed: int = 2, duration: float = 0) -> None:
+        """Drive toward angle for duration seconds, repeating wheelMove like the app's joystick.
+
+        duration 0 sends a single wheelMove, a nudge of about a second. The robot keeps going for
+        about a second after the last message, then stops by itself.
+        """
+        loop = asyncio.get_running_loop()
+        end = loop.time() + duration
+        while True:
+            await self.move(angle, speed)
+            if loop.time() + DRIVE_INTERVAL > end:
+                return
+            await asyncio.sleep(DRIVE_INTERVAL)

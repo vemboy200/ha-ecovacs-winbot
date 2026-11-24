@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from custom_components.ecovacs_winbot.winbot import WinbotStatus, redact
+from unittest.mock import AsyncMock, patch
+
+import pytest
+from pytest_homeassistant.components.bluetooth import generate_ble_device
+
+from custom_components.ecovacs_winbot.winbot import WinbotClient, WinbotStatus, redact
 from custom_components.ecovacs_winbot.winbot.models import apply_info, parse_stats
 
 
@@ -59,3 +64,25 @@ def test_parse_stats_buttons() -> None:
     assert (stats.power_presses, stats.mode_presses, stats.cable_reel_presses) == (13, 11, 152)
     stats = parse_stats({"key_count": [1, "x"]})
     assert (stats.power_presses, stats.mode_presses, stats.cable_reel_presses) == (None, None, None)
+
+
+@pytest.mark.parametrize(("angle", "sent"), [(45, 45), (0, 360), (360, 360)])
+async def test_move(angle: int, sent: int) -> None:
+    """One wheelMove, as the app sends it; 0 goes out as 360, the app's value for up."""
+    client = WinbotClient(generate_ble_device("AA:BB:CC:DD:0B:C4", "WINBOT_TEST_0001"))
+    with patch.object(client, "send", AsyncMock()) as send:
+        await client.move(angle, 3)
+    send.assert_awaited_once_with("wheelMove", {"angle": sent, "speed": 3, "act": "move"})
+
+
+async def test_drive_repeats_every_100_ms() -> None:
+    """drive repeats wheelMove about every 100 ms for the duration; 0 sends it once."""
+    client = WinbotClient(generate_ble_device("AA:BB:CC:DD:0B:C4", "WINBOT_TEST_0001"))
+    with patch.object(client, "send", AsyncMock()) as send:
+        await client.drive(90, 2, 0)
+        assert send.await_count == 1
+        send.reset_mock()
+        await client.drive(90, 2, 0.35)
+    # Sends at about 0, 0.1, 0.2 and 0.3 s; a slow test machine may fit one fewer.
+    assert 3 <= send.await_count <= 4
+    send.assert_awaited_with("wheelMove", {"angle": 90, "speed": 2, "act": "move"})
