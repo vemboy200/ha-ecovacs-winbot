@@ -152,7 +152,7 @@ The app's `clean` / `return` request had a wrong CRC (0x6a instead of 0x60), and
 | `onAdsorption` | `adsorption` | Suction turned on at start |
 | `onGlassType` | `type`, `area` | Shortly after start |
 | `onSprayInfo` | `auto`, `water` | Mid-clean; `water: 0` = **out of water** (the robot's voice said so at the same moment). Never sent with water present: nothing after a refill, a clean start, a manual spray, or a finished clean with a full tank. `water` can't be polled either: `getSprayInfo` (alone or in `getInfo`) only returns `auto` |
-| `onCollision` | `direction` | Seen once, `{"direction": "br,"}`, right after a clean finished and just before suction turned off, as the robot was taken off the glass. The trailing comma suggests a list. `br` also came about once a second while the robot was driven into the right edge of the frame during the remote-control test (see [Remote control](#remote-control)), so it isn't simply "bottom right" |
+| `onCollision` | `direction` | Seen once, `{"direction": "br,"}`, right after a clean finished and just before suction turned off, as the robot was taken off the glass. The trailing comma suggests a list. Every edge, corner and both bumpers give the same `br,` (see [Remote control](#remote-control)), so it doesn't say which side |
 
 ## Clean state values seen
 
@@ -204,13 +204,12 @@ The ECOVACS HOME app needs a cloud account and an internet connection even to dr
 - **`angle` is a direction on the window, in degrees:** 360 up, 180 down, 90 right, 270 left. The robot first turns to face that way, then drives. It may reverse instead of turning around: facing right, 270 made it back up to the left.
 - **`angle` isn't limited to four directions:** 45 made it turn toward the upper right and drive diagonally.
 - **`speed` is 1 to 3**, faster as it goes up (the app was seen sending 2). 4 and 5 were accepted but looked slower than 3, about the same as each other, so values above 3 seem to fall back to a slower speed. The robot never replies to `wheelMove`, so an out-of-range value gives no error.
-- Driving into the frame gives `onCollision {"direction": "br,"}` about once a second while it touches; it kept coming after the robot went idle. Here it was pushing into the right edge, so `br` isn't simply bottom right as first guessed.
+- **`onCollision` is always `{"direction": "br,"}`**: driving into the right, top and bottom edges, into the top-right corner diagonally, and tapping either of the two bumpers by hand all gave the same code. So it doesn't say which side. *Reading:* `br` means "bumper". Each hit while driving gave one message and the robot went idle about a second later. Once, left pressed against the right edge, it repeated about once a second; bumper taps while it sat idle may report nothing.
 
 **Not known yet:**
 
 - Whether the app varies `speed` with how far the joystick is pushed, and exactly what speed 4 and above fall back to.
 - Whether the app sends anything on release (no capture of that yet), and whether other `act` values exist.
-- What the `onCollision` codes mean, beyond "touching the frame".
 - How well a 100 ms stream works through an ESPHome Bluetooth proxy (the script talked to the robot directly from a Mac).
 
 **Plan for Home Assistant** (smallest pieces first):
