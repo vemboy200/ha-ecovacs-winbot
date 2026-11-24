@@ -148,17 +148,29 @@ def apply_info(status: WinbotStatus, data: dict[str, Any]) -> WinbotStatus:
     return status
 
 
+# key_count positions (docs/protocol.md). 0, 3 and 5 aren't buttons on the W2 Pro Omni.
+KEY_POWER = 1
+KEY_MODE = 2
+KEY_CABLE_REEL = 4
+
+
 @dataclass(frozen=True, slots=True)
 class WinbotStats:
     """Lifetime statistics from getBuryData.
 
-    Only the plain counters are named. Most other fields are arrays whose positions
-    aren't decoded yet (glass_count, clean_sum, key_count, ...), so they're kept in raw.
+    Only the plain counters and the mapped key_count positions are named. Most other
+    fields are arrays whose positions aren't decoded yet (glass_count, clean_sum, ...),
+    so they're kept in raw.
     """
 
     charge_count: int | None = None
     no_water_count: int | None = None
     fall_count: int | None = None
+    # Lifetime button presses (key_count), mapped on a W2 Pro Omni (docs/protocol.md).
+    # The start/pause button isn't counted.
+    power_presses: int | None = None
+    mode_presses: int | None = None
+    cable_reel_presses: int | None = None
     raw: dict[str, Any] = field(default_factory=dict)
 
 
@@ -169,9 +181,19 @@ def parse_stats(data: dict[str, Any]) -> WinbotStats:
         value = data.get(key)
         return value if isinstance(value, int) and not isinstance(value, bool) else None
 
+    def key(position: int) -> int | None:
+        keys = data.get("key_count")
+        if isinstance(keys, list) and len(keys) > position:
+            value = keys[position]
+            return value if isinstance(value, int) and not isinstance(value, bool) else None
+        return None
+
     return WinbotStats(
         charge_count=count("charge_count"),
         no_water_count=count("no_water_count"),
         fall_count=count("fall_count"),
+        power_presses=key(KEY_POWER),
+        mode_presses=key(KEY_MODE),
+        cable_reel_presses=key(KEY_CABLE_REEL),
         raw=dict(data),
     )

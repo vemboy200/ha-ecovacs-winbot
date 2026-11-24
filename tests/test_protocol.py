@@ -50,3 +50,12 @@ def test_parse_stats() -> None:
     assert stats.no_water_count is None
     assert stats.fall_count is None
     assert stats.raw == data
+    assert stats.power_presses is None
+
+
+def test_parse_stats_buttons() -> None:
+    """The mapped key_count positions are named; a short or odd list gives None."""
+    stats = parse_stats({"key_count": [1, 13, 11, 0, 152, 0]})
+    assert (stats.power_presses, stats.mode_presses, stats.cable_reel_presses) == (13, 11, 152)
+    stats = parse_stats({"key_count": [1, "x"]})
+    assert (stats.power_presses, stats.mode_presses, stats.cable_reel_presses) == (None, None, None)
