@@ -17,6 +17,8 @@ import logging
 import time
 from typing import TypedDict
 
+from bleak_retry_connector import NO_RSSI_VALUE
+
 from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
@@ -145,7 +147,7 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
         if not self.awake:
             return
         info = bluetooth.async_last_service_info(self.hass, self.address, connectable=True)
-        if info and info.rssi != self.rssi:
+        if info and info.rssi != NO_RSSI_VALUE and info.rssi != self.rssi:
             self.rssi = info.rssi
             self._rssi_written = (self.rssi, time.monotonic())
             self.async_update_listeners()
@@ -220,7 +222,9 @@ class WinbotCoordinator(DataUpdateCoordinator[WinbotStatus]):
     ) -> None:
         if self.client:
             self.client.set_ble_device(service_info.device)
-        self.rssi = service_info.rssi
+        if service_info.rssi != NO_RSSI_VALUE:
+            # -127 means HA has no reading, not a real signal; keep the last real one.
+            self.rssi = service_info.rssi
         was_awake, self.awake = self.awake, True
         if not was_awake:
             if self._logged_off:

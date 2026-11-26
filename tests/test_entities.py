@@ -521,7 +521,8 @@ async def test_signal_strength(
         )
     assert hass.states.get(SIGNAL).state == STATE_UNAVAILABLE  # no advertisement seen yet
 
-    for rssi in (-70, -75):
+    # -127 is HA's "no reading" placeholder (seen while another device held the connection): keep the last real value.
+    for rssi, shown in ((-70, -70), (-75, -75), (-127, -75)):
         with patch(
             "custom_components.ecovacs_winbot.coordinator.bluetooth.async_last_service_info",
             return_value=make_service_info(ADDRESS, NAME, rssi=rssi),
@@ -529,7 +530,7 @@ async def test_signal_strength(
             freezer.tick(interval)
             async_fire_time_changed(hass)
             await hass.async_block_till_done()
-        assert hass.states.get(SIGNAL).state == str(rssi)
+        assert hass.states.get(SIGNAL).state == str(shown)
 
 
 async def test_statistics(
