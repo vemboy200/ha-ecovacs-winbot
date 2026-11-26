@@ -71,6 +71,8 @@ AUTO_SPRAY = "switch.winbot_0bc4_automatic_spraying"
 CONNECTION = "switch.winbot_0bc4_bluetooth_connection"
 VOLUME = "number.winbot_0bc4_voice_volume"
 SPRAY = "button.winbot_0bc4_spray"
+WHEELS_FORWARD = "button.winbot_0bc4_spin_wheels_forward"
+WHEELS_BACKWARD = "button.winbot_0bc4_spin_wheels_backward"
 EVENT = "event.winbot_0bc4_cleaning"
 CHARGE_COUNT = "sensor.winbot_0bc4_charge_count"
 BUMPER = "event.winbot_0bc4_bumper"
@@ -724,3 +726,28 @@ async def test_spray_follows_glass(
     )
     await hass.async_block_till_done()
     assert hass.states.get(SPRAY).state != STATE_UNAVAILABLE
+
+
+async def test_wheel_buttons_off_the_glass_only(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_robot: MagicMock,
+    mock_robot_class: MagicMock,
+) -> None:
+    """The wheel-cleaning buttons spin the treads, and are unavailable while the robot is on the glass."""
+    await _setup(hass, mock_config_entry, mock_robot, replace(READY, attached=False))
+
+    for entity_id, direction in ((WHEELS_FORWARD, "forward"), (WHEELS_BACKWARD, "backward")):
+        await hass.services.async_call(
+            BUTTON_DOMAIN, SERVICE_PRESS, {ATTR_ENTITY_ID: entity_id}, blocking=True
+        )
+        mock_robot.spin_wheels.assert_awaited_with(direction=direction)
+
+    on_status = mock_robot_class.call_args.kwargs["on_status"]
+    on_status(
+        replace(READY, attached=True),
+        Frame(FrameKind.PUSH, "onAdsorption", None, {}, crc_ok=True),
+    )
+    await hass.async_block_till_done()
+    assert hass.states.get(WHEELS_FORWARD).state == STATE_UNAVAILABLE
+    assert hass.states.get(WHEELS_BACKWARD).state == STATE_UNAVAILABLE

@@ -147,7 +147,7 @@ The robot never sends a reply frame for `clean` (0 replies to the app's 14 reque
 | `setVoice` | `{"value": 0-63}` | `{using, support, value}` | Voice volume. The app sent 7, 14, 21. A 0-100 sweep from HA: 0-63 accepted and echoed, anything higher clamped to 63. The robot beeps at the new volume each time |
 | `setSprayInfo` | `{"auto": 0 \| 1}` | `{auto}` | Automatic spraying off/on |
 | `sprayWater` | `{"direction": "auto"}` | `{success: 1}` | Spray once now |
-| `wheelsStart` | `{"direction": "forward" \| "backward"}` | `code 0` | *Unknown* app button (wheel cleaning?); no state change seen |
+| `wheelsStart` | `{"direction": "forward" \| "backward"}` | `code 0` | Wheel cleaning: spins the treads in that direction for about 5 s, then they stop by themselves (tested 2026-11-26 with the robot off the glass, held: forward and backward spun opposite ways). No push before, during or after, and no stop command is needed |
 | `wheelMove` | `{"angle": 360, "speed": 2, "act": "move"}` | none | Remote-control driving: sent every ~100 ms while the joystick is held; `angle` 360 and 180 seen. State goes to `move`, router `control`. See [Remote control](#remote-control) |
 
 ### Checksum quirk
@@ -235,7 +235,7 @@ The ECOVACS HOME app needs a cloud account and an internet connection even to dr
 
 ## Not yet known
 
-- What `wheelsStart` is.
+- What `wheelsStart` does while the robot is on the glass (only tested off it), and whether a second one during a spin restarts the 5 s.
 - Other `state` / `trigger` values (error, fell off, low battery).
 - What `border` and `glass_type` values mean, and what `water` reads when the tank has water.
 - Whether the station (`WINBASE`) has anything useful.

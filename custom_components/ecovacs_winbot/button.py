@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
@@ -26,10 +27,28 @@ class WinbotButtonDescription(ButtonEntityDescription):
     kwargs: dict[str, Any] = field(default_factory=dict)
     # Only possible while the robot is attached to the glass; unavailable otherwise, as the app hides it.
     needs_glass: bool = False
+    # Only offered while the robot is off the glass: spinning the treads there would drive it.
+    needs_off_glass: bool = False
 
 
 BUTTONS: tuple[WinbotButtonDescription, ...] = (
     WinbotButtonDescription(key="spray", translation_key="spray", method="spray_once", needs_glass=True),
+    WinbotButtonDescription(
+        key="wheels_forward",
+        translation_key="wheels_forward",
+        method="spin_wheels",
+        kwargs={"direction": "forward"},
+        needs_off_glass=True,
+        entity_category=EntityCategory.CONFIG,
+    ),
+    WinbotButtonDescription(
+        key="wheels_backward",
+        translation_key="wheels_backward",
+        method="spin_wheels",
+        kwargs={"direction": "backward"},
+        needs_off_glass=True,
+        entity_category=EntityCategory.CONFIG,
+    ),
 )
 
 
@@ -50,11 +69,13 @@ class WinbotButton(WinbotEntity, ButtonEntity):
 
     @property
     def available(self) -> bool:
-        """Buttons need the robot on, HA allowed to connect, and some the robot on the glass."""
+        """Buttons need the robot on, HA allowed to connect, and some the robot on (or off) the glass."""
+        attached = self.coordinator.data.attached
         return (
             super().available
             and not self.coordinator.paused
-            and not (self.entity_description.needs_glass and self.coordinator.data.attached is False)
+            and not (self.entity_description.needs_glass and attached is False)
+            and not (self.entity_description.needs_off_glass and attached is not False)
         )
 
     async def async_press(self) -> None:
