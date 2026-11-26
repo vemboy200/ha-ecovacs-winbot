@@ -37,6 +37,12 @@
     "button": {
       "spray": {
         "name": "Spray"
+      },
+      "wheels_backward": {
+        "name": "Spin wheels backward"
+      },
+      "wheels_forward": {
+        "name": "Spin wheels forward"
       }
     },
     "event": {

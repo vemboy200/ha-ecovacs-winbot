@@ -99,6 +99,7 @@ There are no options to configure afterwards.
 | Attached to glass | Binary sensor | Whether suction is on, which is when the robot is on the window. The vacuum commands, driving and Spray need it |
 | Out of water | Binary sensor | On when the robot reports an empty tank. The robot only says so in a message during a clean (the full status doesn't include it), so the last value is kept, also across Home Assistant restarts, until the robot reports again. Unknown until the first report. The robot doesn't report a refilled tank (nothing after a refill, a start or a spray), so the sensor turns off when a new clean starts and back on if the robot reports the tank empty again |
 | Spray | Button | Spray once. Unavailable while the robot isn't attached to the glass |
+| Spin wheels forward / backward | Button | Wheel cleaning: spins the treads for about 5 seconds so you can wipe them, then they stop by themselves. Unavailable while the robot is attached to the glass, where spinning would drive it |
 | Automatic spraying | Switch | Let the robot spray on its own while cleaning |
 | Voice volume | Number | Volume of the robot's voice prompts, 0-63 (the app was seen sending 7, 14 and 21). The robot beeps at the new volume when it changes |
 | Bluetooth connection | Switch | Whether Home Assistant uses the robot's Bluetooth connection. Turn it off to make Home Assistant disconnect and stay off, so the ECOVACS HOME app or another device can connect (see below) |

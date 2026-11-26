@@ -256,6 +256,13 @@ class WinbotClient:
         """Spray water once."""
         await self.request("sprayWater", {"direction": "auto"})
 
+    async def spin_wheels(self, direction: str) -> None:
+        """Spin the treads for wheel cleaning, about 5 s, then they stop by themselves.
+
+        direction is "forward" or "backward" (docs/protocol.md, wheelsStart).
+        """
+        await self.request("wheelsStart", {"direction": direction})
+
     async def set_volume(self, value: int) -> None:
         """Set the voice volume."""
         reply = await self.request("setVoice", {"value": value})

@@ -17,6 +17,12 @@
     "button": {
       "spray": {
         "default": "mdi:spray"
+      },
+      "wheels_backward": {
+        "default": "mdi:rotate-left"
+      },
+      "wheels_forward": {
+        "default": "mdi:rotate-right"
       }
     },
     "event": {
